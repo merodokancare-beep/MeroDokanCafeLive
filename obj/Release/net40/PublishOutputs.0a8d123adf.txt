@@ -1,0 +1,16 @@
+D:\Bhawani Works\Project All\MeroDokanCafeLive\publish\app_icon.ico
+D:\Bhawani Works\Project All\MeroDokanCafeLive\publish\dbconfig.txt
+D:\Bhawani Works\Project All\MeroDokanCafeLive\publish\MeroDokanCafe_Database_Setup.sql
+D:\Bhawani Works\Project All\MeroDokanCafeLive\publish\Setup_Database.bat
+D:\Bhawani Works\Project All\MeroDokanCafeLive\publish\Setup_Database.ps1
+D:\Bhawani Works\Project All\MeroDokanCafeLive\publish\Assets\logo.jpeg
+D:\Bhawani Works\Project All\MeroDokanCafeLive\publish\Assets\logo.jpg
+D:\Bhawani Works\Project All\MeroDokanCafeLive\publish\Assets\logo.png
+D:\Bhawani Works\Project All\MeroDokanCafeLive\publish\Assets\logo.svg
+D:\Bhawani Works\Project All\MeroDokanCafeLive\publish\Assets\logo_circular_clean.png
+D:\Bhawani Works\Project All\MeroDokanCafeLive\publish\Assets\logo_transparent.png
+D:\Bhawani Works\Project All\MeroDokanCafeLive\publish\Assets\preview_threshold.png
+D:\Bhawani Works\Project All\MeroDokanCafeLive\publish\MeroDokanCafe.exe
+D:\Bhawani Works\Project All\MeroDokanCafeLive\publish\MeroDokanCafe.exe.config
+D:\Bhawani Works\Project All\MeroDokanCafeLive\publish\MeroDokanCafe.pdb
+D:\Bhawani Works\Project All\MeroDokanCafeLive\publish\QRCoder.dll

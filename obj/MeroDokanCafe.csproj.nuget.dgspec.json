@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Bhawani Works\\Project All\\MeroDokanCafe4.0\\MeroDokanCafe.csproj": {}
+    "D:\\Bhawani Works\\Project All\\MeroDokanCafeLive\\MeroDokanCafe.csproj": {}
   },
   "projects": {
-    "D:\\Bhawani Works\\Project All\\MeroDokanCafe4.0\\MeroDokanCafe.csproj": {
+    "D:\\Bhawani Works\\Project All\\MeroDokanCafeLive\\MeroDokanCafe.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Bhawani Works\\Project All\\MeroDokanCafe4.0\\MeroDokanCafe.csproj",
+        "projectUniqueName": "D:\\Bhawani Works\\Project All\\MeroDokanCafeLive\\MeroDokanCafe.csproj",
         "projectName": "MeroDokanCafe",
-        "projectPath": "D:\\Bhawani Works\\Project All\\MeroDokanCafe4.0\\MeroDokanCafe.csproj",
+        "projectPath": "D:\\Bhawani Works\\Project All\\MeroDokanCafeLive\\MeroDokanCafe.csproj",
         "packagesPath": "C:\\Users\\bbhat\\.nuget\\packages\\",
-        "outputPath": "D:\\Bhawani Works\\Project All\\MeroDokanCafe4.0\\obj\\",
+        "outputPath": "D:\\Bhawani Works\\Project All\\MeroDokanCafeLive\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

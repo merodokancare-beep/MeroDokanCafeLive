@@ -100,14 +100,14 @@ namespace MeroDokan
 
             Label lblDate = new Label();
             lblDate.Text = "Settlement Date:";
-            lblDate.Location = new Point(0, 12);
+            lblDate.Location = new Point(0, 10);
             lblDate.AutoSize = true;
             Theme.StyleLabel(lblDate, Theme.TextLight, Theme.BoldFont);
             topBar.Controls.Add(lblDate);
 
             dtpSettlementDate = new DateTimePicker();
-            dtpSettlementDate.Size = new Size(150, 28);
-            dtpSettlementDate.Location = new Point(190, 8);
+            dtpSettlementDate.Size = new Size(125, 28);
+            dtpSettlementDate.Location = new Point(125, 6);
             dtpSettlementDate.Font = Theme.MainFont;
             dtpSettlementDate.Format = DateTimePickerFormat.Short;
             dtpSettlementDate.Value = DateTime.Today;
@@ -115,12 +115,36 @@ namespace MeroDokan
             topBar.Controls.Add(dtpSettlementDate);
 
             btnRefresh = new Button();
-            btnRefresh.Text = "🔄 Refresh Metrics";
-            btnRefresh.Size = new Size(180, 32);
-            btnRefresh.Location = new Point(370, 6);
+            btnRefresh.Text = "🔄 Refresh";
+            btnRefresh.Size = new Size(100, 32);
+            btnRefresh.Location = new Point(260, 4);
             Theme.StylePrimaryButton(btnRefresh);
             btnRefresh.Click += (s, e) => { LoadOpeningCash(); LoadTodayMetrics(); };
             topBar.Controls.Add(btnRefresh);
+
+            Button btnPrintA4Top = new Button();
+            btnPrintA4Top.Text = "📄 A4 Full Report (Multi-Page)";
+            btnPrintA4Top.Size = new Size(220, 32);
+            btnPrintA4Top.Location = new Point(370, 4);
+            Theme.StyleSuccessButton(btnPrintA4Top);
+            btnPrintA4Top.Click += (s, e) => PrintCurrentSettlement(isA4: true, previewOnly: false);
+            topBar.Controls.Add(btnPrintA4Top);
+
+            Button btnPrintThermalTop = new Button();
+            btnPrintThermalTop.Text = "🧾 80mm Slip";
+            btnPrintThermalTop.Size = new Size(130, 32);
+            btnPrintThermalTop.Location = new Point(600, 4);
+            Theme.StylePrimaryButton(btnPrintThermalTop);
+            btnPrintThermalTop.Click += (s, e) => PrintCurrentSettlement(isA4: false, previewOnly: false);
+            topBar.Controls.Add(btnPrintThermalTop);
+
+            Button btnPreviewTop = new Button();
+            btnPreviewTop.Text = "👁️ A4 Preview";
+            btnPreviewTop.Size = new Size(140, 32);
+            btnPreviewTop.Location = new Point(740, 4);
+            Theme.StyleSecondaryButton(btnPreviewTop);
+            btnPreviewTop.Click += (s, e) => PrintCurrentSettlement(isA4: true, previewOnly: true);
+            topBar.Controls.Add(btnPreviewTop);
 
             this.Controls.Add(topBar);
 
@@ -320,11 +344,27 @@ namespace MeroDokan
             btnSaveSettlement = new Button();
             btnSaveSettlement.Text = "🔒 Save & Close Register";
             btnSaveSettlement.UseMnemonic = false;
-            btnSaveSettlement.Size = new Size(340, 42);
-            btnSaveSettlement.Location = new Point(470, 210);
+            btnSaveSettlement.Size = new Size(340, 38);
+            btnSaveSettlement.Location = new Point(470, 204);
             Theme.StyleSuccessButton(btnSaveSettlement);
             btnSaveSettlement.Click += BtnSaveSettlement_Click;
             cardMain.Controls.Add(btnSaveSettlement);
+
+            Button btnPrintA4Card = new Button();
+            btnPrintA4Card.Text = "📄 A4 Full Report (Multi-Page)";
+            btnPrintA4Card.Size = new Size(205, 36);
+            btnPrintA4Card.Location = new Point(470, 248);
+            Theme.StylePrimaryButton(btnPrintA4Card);
+            btnPrintA4Card.Click += (s, e) => PrintCurrentSettlement(isA4: true, previewOnly: false);
+            cardMain.Controls.Add(btnPrintA4Card);
+
+            Button btnPrintThermalCard = new Button();
+            btnPrintThermalCard.Text = "🧾 80mm Slip";
+            btnPrintThermalCard.Size = new Size(125, 36);
+            btnPrintThermalCard.Location = new Point(685, 248);
+            Theme.StyleSecondaryButton(btnPrintThermalCard);
+            btnPrintThermalCard.Click += (s, e) => PrintCurrentSettlement(isA4: false, previewOnly: false);
+            cardMain.Controls.Add(btnPrintThermalCard);
 
 
             // BOTTOM PANEL: Historical Log
@@ -340,6 +380,7 @@ namespace MeroDokan
             gridHistory.Size = new Size(910, 185);
             gridHistory.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             Theme.StyleGrid(gridHistory);
+            gridHistory.CellContentClick += GridHistory_CellContentClick;
             this.Controls.Add(gridHistory);
         }
 
@@ -729,8 +770,22 @@ namespace MeroDokan
                     }
                 }
 
-                MessageBox.Show($"Register settlement for {selectDate:yyyy-MM-dd} saved successfully!", "Settlement Logged", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 LoadHistory();
+
+                DialogResult printChoice = MessageBox.Show(
+                    $"Register settlement for {selectDate:yyyy-MM-dd} saved successfully!\n\nWould you like to print the Day Close Settlement Report now?\n\n• Click 'Yes' for Full A4 Report (Multi-Page with Itemized Sold List)\n• Click 'No' for 80mm Thermal Slip\n• Click 'Cancel' to finish without printing",
+                    "Settlement Saved & Closed",
+                    MessageBoxButtons.YesNoCancel,
+                    MessageBoxIcon.Information);
+
+                if (printChoice == DialogResult.Yes)
+                {
+                    PrintCurrentSettlement(isA4: true, previewOnly: false);
+                }
+                else if (printChoice == DialogResult.No)
+                {
+                    PrintCurrentSettlement(isA4: false, previewOnly: false);
+                }
             }
             catch (Exception ex)
             {
@@ -801,12 +856,121 @@ namespace MeroDokan
                         if (gridHistory.Columns["Variance"] != null) gridHistory.Columns["Variance"].FillWeight = 85;
                         if (gridHistory.Columns["Settled By"] != null) gridHistory.Columns["Settled By"].FillWeight = 100;
                         if (gridHistory.Columns["Remarks"] != null) gridHistory.Columns["Remarks"].FillWeight = 150;
+
+                        // Add action column for reprinting settlement slip
+                        if (gridHistory.Columns["PrintSlip"] == null)
+                        {
+                            DataGridViewButtonColumn btnCol = new DataGridViewButtonColumn();
+                            btnCol.Name = "PrintSlip";
+                            btnCol.HeaderText = "Settlement Slip";
+                            btnCol.Text = "🖨️ Print Slip";
+                            btnCol.UseColumnTextForButtonValue = true;
+                            btnCol.FlatStyle = FlatStyle.Flat;
+                            btnCol.DefaultCellStyle.BackColor = Theme.Success;
+                            btnCol.DefaultCellStyle.ForeColor = Color.White;
+                            btnCol.DefaultCellStyle.SelectionBackColor = Color.FromArgb(5, 150, 105);
+                            btnCol.DefaultCellStyle.SelectionForeColor = Color.White;
+                            btnCol.FillWeight = 110;
+                            gridHistory.Columns.Add(btnCol);
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading settlement history register: {ex.Message}", "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void PrintCurrentSettlement(bool isA4, bool previewOnly)
+        {
+            try
+            {
+                DateTime selectDate = dtpSettlementDate.Value.Date;
+                decimal actualCash = 0;
+                decimal.TryParse(txtActualCash.Text.Trim(), out actualCash);
+                string remarks = txtRemarks.Text.Trim();
+
+                var data = ThermalReceiptPrinter.LoadSettlementData(selectDate, actualCash, remarks);
+
+                // Synchronize live figures if not yet saved in database
+                if (data.TotalBillsCount == 0 && totalSaleToday > 0)
+                {
+                    data.GrossSales = totalSaleToday;
+                    data.NetSales = totalSaleToday;
+                }
+                data.CashSales = cashSales;
+                data.CardSales = totalCardPayment;
+                data.QRSales = totalQRPayment;
+                data.DuesCreated = duesCreated;
+                data.DueCollectionsPrev = prevDueRepayments;
+                data.DueCollectionsToday = todayDueRepayments;
+                data.DueCollectionsTotal = prevDueRepayments + todayDueRepayments;
+                data.TotalCollections = totalOnlinePayment + cashSales + (prevDueRepayments + todayDueRepayments);
+                data.ExpectedCash = expectedCash;
+                data.ActualCash = actualCash;
+                data.Variance = actualCash - expectedCash;
+                data.OpeningCash = openingCash;
+                data.VoidAmount = voidAmountToday;
+                data.CashRefunds = cashRefunds;
+                data.ReturnsAndRefunds = totalReturns;
+                if (!string.IsNullOrEmpty(remarks)) data.Remarks = remarks;
+
+                if (isA4)
+                {
+                    if (previewOnly)
+                        ThermalReceiptPrinter.ShowA4SettlementPreview(data);
+                    else
+                        ThermalReceiptPrinter.PrintA4Settlement(data);
+                }
+                else
+                {
+                    if (previewOnly)
+                        ThermalReceiptPrinter.ShowSettlementPreview(data);
+                    else
+                        ThermalReceiptPrinter.PrintSettlement(data);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error printing settlement report: {ex.Message}", "Print Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void GridHistory_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
+
+            if (gridHistory.Columns[e.ColumnIndex].Name == "PrintSlip")
+            {
+                try
+                {
+                    var row = gridHistory.Rows[e.RowIndex];
+                    if (row.Cells["Date"].Value != null)
+                    {
+                        DateTime dt = Convert.ToDateTime(row.Cells["Date"].Value);
+                        var data = ThermalReceiptPrinter.LoadSettlementData(dt);
+
+                        DialogResult choice = MessageBox.Show(
+                            $"Daily Settlement Report for {dt:yyyy-MM-dd}\n\n• Click 'Yes' for Full A4 Multi-Page Report (with Itemized Sold List)\n• Click 'No' for 80mm Thermal Slip\n• Click 'Cancel' to abort",
+                            "Reprint Settlement Report",
+                            MessageBoxButtons.YesNoCancel,
+                            MessageBoxIcon.Question);
+
+                        if (choice == DialogResult.Yes)
+                        {
+                            ThermalReceiptPrinter.ShowA4SettlementPreview(data);
+                        }
+                        else if (choice == DialogResult.No)
+                        {
+                            ThermalReceiptPrinter.ShowSettlementPreview(data);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error printing historical settlement: {ex.Message}", "Print Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
         }
     }

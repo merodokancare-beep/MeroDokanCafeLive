@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "0BWe0/+NSTE=",
+  "dgSpecHash": "9Mq4E6jTw2Q=",
   "success": true,
-  "projectFilePath": "D:\\Bhawani Works\\Project All\\MeroDokanCafe4.0\\MeroDokanCafe.csproj",
+  "projectFilePath": "D:\\Bhawani Works\\Project All\\MeroDokanCafeLive\\MeroDokanCafe.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\bbhat\\.nuget\\packages\\microsoft.netframework.referenceassemblies\\1.0.3\\microsoft.netframework.referenceassemblies.1.0.3.nupkg.sha512",
     "C:\\Users\\bbhat\\.nuget\\packages\\microsoft.netframework.referenceassemblies.net40\\1.0.3\\microsoft.netframework.referenceassemblies.net40.1.0.3.nupkg.sha512",

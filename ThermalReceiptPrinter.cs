@@ -120,6 +120,116 @@ namespace MeroDokan
             }
             catch { }
         }
+
+        public static void ShowSettlementPreview(SettlementPrintData d)
+        {
+            try
+            {
+                PrintDocument doc = BuildSettlementDocument(d);
+                PrintPreviewDialog dlg = new PrintPreviewDialog();
+                dlg.Document = doc;
+                dlg.WindowState = FormWindowState.Maximized;
+                dlg.StartPosition = FormStartPosition.CenterScreen;
+                if (dlg.PrintPreviewControl != null)
+                {
+                    dlg.PrintPreviewControl.Zoom = 1.0;
+                    dlg.PrintPreviewControl.AutoZoom = false;
+                }
+                try { ((Form)dlg).Text = $"Daily Settlement Slip (80mm) - {d.SettlementDate:yyyy-MM-dd}"; } catch { }
+                dlg.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error generating settlement preview: {ex.Message}", "Print Preview Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        public static void PrintSettlement(SettlementPrintData d)
+        {
+            try
+            {
+                PrintDocument doc = BuildSettlementDocument(d);
+                string printer = doc.PrinterSettings.PrinterName;
+                if (IsVirtualOrPdfPrinter(printer))
+                {
+                    ShowSettlementPreview(d);
+                    return;
+                }
+                doc.PrintController = new StandardPrintController();
+                doc.Print();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error printing settlement slip: {ex.Message}\nPlease check your printer connection.", "Printer Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        public static void ShowSettlementPreview(DateTime date, decimal? actualCashOverride = null, string remarksOverride = null)
+        {
+            var data = LoadSettlementData(date, actualCashOverride, remarksOverride);
+            ShowSettlementPreview(data);
+        }
+
+        public static void PrintSettlement(DateTime date, decimal? actualCashOverride = null, string remarksOverride = null)
+        {
+            var data = LoadSettlementData(date, actualCashOverride, remarksOverride);
+            PrintSettlement(data);
+        }
+
+        public static void ShowA4SettlementPreview(SettlementPrintData d)
+        {
+            try
+            {
+                PrintDocument doc = BuildA4SettlementDocument(d);
+                PrintPreviewDialog dlg = new PrintPreviewDialog();
+                dlg.Document = doc;
+                dlg.WindowState = FormWindowState.Maximized;
+                dlg.StartPosition = FormStartPosition.CenterScreen;
+                if (dlg.PrintPreviewControl != null)
+                {
+                    dlg.PrintPreviewControl.Zoom = 1.0;
+                    dlg.PrintPreviewControl.AutoZoom = false;
+                }
+                try { ((Form)dlg).Text = $"Daily Settlement & Item Sales Report (A4) - {d.SettlementDate:yyyy-MM-dd}"; } catch { }
+                dlg.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error generating A4 settlement preview: {ex.Message}", "Print Preview Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        public static void PrintA4Settlement(SettlementPrintData d)
+        {
+            try
+            {
+                PrintDocument doc = BuildA4SettlementDocument(d);
+                string printer = doc.PrinterSettings.PrinterName;
+                if (IsVirtualOrPdfPrinter(printer))
+                {
+                    ShowA4SettlementPreview(d);
+                    return;
+                }
+                doc.PrintController = new StandardPrintController();
+                doc.Print();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error printing A4 settlement report: {ex.Message}\nPlease check your printer connection.", "Printer Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        public static void ShowA4SettlementPreview(DateTime date, decimal? actualCashOverride = null, string remarksOverride = null)
+        {
+            var data = LoadSettlementData(date, actualCashOverride, remarksOverride);
+            ShowA4SettlementPreview(data);
+        }
+
+        public static void PrintA4Settlement(DateTime date, decimal? actualCashOverride = null, string remarksOverride = null)
+        {
+            var data = LoadSettlementData(date, actualCashOverride, remarksOverride);
+            PrintA4Settlement(data);
+        }
         #endregion
 
         #region Printer Setup & Discovery
@@ -205,6 +315,63 @@ namespace MeroDokan
             public bool IsVoid = false;
             public string VoidReason = "";
             public string KitchenPrinter = null;
+        }
+
+        public class SettlementPrintData
+        {
+            public string ShopName = "The Local Cafe";
+            public string LogoPath = "";
+            public string GSTIN = "";
+            public string Address = "";
+            public string ContactNo = "";
+            public string BillingPrinter = null;
+
+            public DateTime SettlementDate = DateTime.Today;
+            public string SettledBy = "System Administrator";
+            public DateTime PrintTime = DateTime.Now;
+
+            // Sales overview
+            public int TotalBillsCount = 0;
+            public decimal GrossSales = 0;
+            public decimal TotalDiscounts = 0;
+            public decimal TotalTax = 0;
+            public decimal ReturnsAndRefunds = 0;
+            public decimal NetSales = 0;
+
+            // Voids
+            public int VoidCount = 0;
+            public decimal VoidAmount = 0;
+
+            // Tender breakdown
+            public decimal CashSales = 0;
+            public decimal CardSales = 0;
+            public decimal QRSales = 0;
+            public decimal DuesCreated = 0;
+            public decimal DueCollectionsPrev = 0;
+            public decimal DueCollectionsToday = 0;
+            public decimal DueCollectionsTotal = 0;
+            public decimal TotalCollections = 0;
+
+            // Cash Drawer Audit
+            public decimal OpeningCash = 0;
+            public decimal CashRefunds = 0;
+            public decimal ExpectedCash = 0;
+            public decimal ActualCash = 0;
+            public decimal Variance = 0;
+            public string Remarks = "";
+
+            // Item-wise sold breakdown
+            public List<SettlementSoldItem> SoldItems = new List<SettlementSoldItem>();
+        }
+
+        public class SettlementSoldItem
+        {
+            public int SerialNo;
+            public string ItemName;
+            public string Category;
+            public decimal Rate;
+            public int Quantity;
+            public decimal TotalAmount;
         }
         #endregion
 
@@ -297,6 +464,76 @@ namespace MeroDokan
             {
                 DrawKotSlip(e.Graphics, d);
                 e.HasMorePages = false;
+            };
+
+            return doc;
+        }
+
+        public static PrintDocument BuildSettlementDocument(SettlementPrintData d)
+        {
+            int pageHeight = EstimateSettlementHeight(d);
+
+            PrintDocument doc = new PrintDocument();
+            doc.DocumentName = "DaySettlement_" + d.SettlementDate.ToString("yyyyMMdd");
+
+            string printer = FindThermalPrinter(d.BillingPrinter);
+            if (!string.IsNullOrEmpty(printer))
+            {
+                doc.PrinterSettings.PrinterName = printer;
+            }
+
+            PaperSize ps = new PaperSize(PaperName, PaperWidth, pageHeight);
+            ps.RawKind = (int)PaperKind.Custom;
+
+            doc.DefaultPageSettings.PaperSize = ps;
+            doc.DefaultPageSettings.Margins = new Margins(MarginLeft, MarginRight, 6, 6);
+            doc.PrinterSettings.DefaultPageSettings.PaperSize = ps;
+            doc.PrinterSettings.DefaultPageSettings.Margins = new Margins(MarginLeft, MarginRight, 6, 6);
+
+            doc.PrintPage += delegate(object s, PrintPageEventArgs e)
+            {
+                DrawSettlementSlip(e.Graphics, d);
+                e.HasMorePages = false;
+            };
+
+            return doc;
+        }
+
+        public static PrintDocument BuildA4SettlementDocument(SettlementPrintData d)
+        {
+            PrintDocument doc = new PrintDocument();
+            doc.DocumentName = "DailySettlementReport_" + d.SettlementDate.ToString("yyyyMMdd");
+
+            PaperSize a4Size = null;
+            foreach (PaperSize ps in doc.PrinterSettings.PaperSizes)
+            {
+                if (ps.Kind == PaperKind.A4)
+                {
+                    a4Size = ps;
+                    break;
+                }
+            }
+            if (a4Size == null)
+            {
+                a4Size = new PaperSize("A4", 827, 1169);
+            }
+            doc.DefaultPageSettings.PaperSize = a4Size;
+            doc.DefaultPageSettings.Margins = new Margins(40, 40, 40, 40);
+            doc.DefaultPageSettings.Landscape = false;
+
+            int currentItemIndex = 0;
+            int pageNum = 1;
+
+            doc.BeginPrint += (s, e) =>
+            {
+                currentItemIndex = 0;
+                pageNum = 1;
+            };
+
+            doc.PrintPage += (s, e) =>
+            {
+                DrawA4SettlementPage(e.Graphics, d, e.MarginBounds, ref currentItemIndex, ref pageNum, out bool hasMore);
+                e.HasMorePages = hasMore;
             };
 
             return doc;
@@ -497,6 +734,323 @@ namespace MeroDokan
                     }
                 }
             }
+
+            return d;
+        }
+
+        public static SettlementPrintData LoadSettlementData(DateTime date, decimal? actualCashOverride = null, string remarksOverride = null)
+        {
+            SettlementPrintData d = new SettlementPrintData();
+            d.SettlementDate = date.Date;
+            d.PrintTime = DateTime.Now;
+
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(DatabaseHelper.ConnectionString))
+                {
+                    conn.Open();
+
+                    // 1. App Profile
+                    using (SqlCommand cmd = new SqlCommand("SELECT TOP 1 ShopName, GSTIN, Address, Phone, BillingPrinterName, LogoPath FROM AppProfile", conn))
+                    using (SqlDataReader r = cmd.ExecuteReader())
+                    {
+                        if (r.Read())
+                        {
+                            d.ShopName = r["ShopName"]?.ToString() ?? "The Local Cafe";
+                            d.GSTIN = r["GSTIN"]?.ToString() ?? "";
+                            d.Address = r["Address"]?.ToString() ?? "";
+                            d.ContactNo = r["Phone"]?.ToString() ?? "";
+                            d.BillingPrinter = r["BillingPrinterName"]?.ToString();
+                            d.LogoPath = r["LogoPath"]?.ToString();
+                        }
+                    }
+
+                    // Logo resolution
+                    if (!string.IsNullOrEmpty(d.LogoPath) && !File.Exists(d.LogoPath))
+                    {
+                        string candidate = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, d.LogoPath);
+                        if (File.Exists(candidate)) d.LogoPath = candidate;
+                    }
+                    if (string.IsNullOrEmpty(d.LogoPath) || !File.Exists(d.LogoPath))
+                    {
+                        string p1 = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "logo_transparent.png");
+                        string p2 = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "logo.jpg");
+                        string p3 = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logo.jpg");
+                        if (File.Exists(p1)) d.LogoPath = p1;
+                        else if (File.Exists(p2)) d.LogoPath = p2;
+                        else if (File.Exists(p3)) d.LogoPath = p3;
+                    }
+
+                    // 2. Sales Summary (Bill Count, Gross Sales, Discounts, Tax)
+                    using (SqlCommand cmd = new SqlCommand(@"
+                        SELECT 
+                            COUNT(*) AS BillCount,
+                            ISNULL(SUM(GrandTotal), 0) AS GrossSales,
+                            ISNULL(SUM(Discount), 0) AS TotalDiscount,
+                            ISNULL(SUM(Tax), 0) AS TotalTax
+                        FROM Sales 
+                        WHERE CAST(SaleDate as DATE) = @date", conn))
+                    {
+                        cmd.Parameters.AddWithValue("@date", date.Date);
+                        using (SqlDataReader r = cmd.ExecuteReader())
+                        {
+                            if (r.Read())
+                            {
+                                d.TotalBillsCount = Convert.ToInt32(r["BillCount"]);
+                                d.GrossSales = Convert.ToDecimal(r["GrossSales"]);
+                                d.TotalDiscounts = Convert.ToDecimal(r["TotalDiscount"]);
+                                d.TotalTax = Convert.ToDecimal(r["TotalTax"]);
+                            }
+                        }
+                    }
+
+                    // 3. Returns and Refunds
+                    using (SqlCommand cmd = new SqlCommand(@"
+                        SELECT 
+                            ISNULL(SUM(TotalRefund), 0) AS TotalRefunds,
+                            ISNULL(SUM(CashRefund), 0) AS CashRefunds
+                        FROM SalesReturns 
+                        WHERE CAST(ReturnDate as DATE) = @date", conn))
+                    {
+                        cmd.Parameters.AddWithValue("@date", date.Date);
+                        using (SqlDataReader r = cmd.ExecuteReader())
+                        {
+                            if (r.Read())
+                            {
+                                d.ReturnsAndRefunds = Convert.ToDecimal(r["TotalRefunds"]);
+                                d.CashRefunds = Convert.ToDecimal(r["CashRefunds"]);
+                            }
+                        }
+                    }
+                    d.NetSales = d.GrossSales - d.ReturnsAndRefunds;
+
+                    // 4. Void KOTs
+                    using (SqlCommand cmd = new SqlCommand(@"
+                        SELECT 
+                            COUNT(kd.Id) AS VoidCount,
+                            ISNULL(SUM(kd.Amount), 0) AS VoidAmount
+                        FROM KOTDetails kd
+                        INNER JOIN KOTMaster k ON kd.KOTId = k.Id
+                        WHERE (kd.IsVoided = 1 OR k.Status = 'Voided' OR k.IsVoided = 1)
+                          AND CAST(ISNULL(kd.VoidedAt, ISNULL(k.VoidedAt, k.CreatedAt)) AS DATE) = @date", conn))
+                    {
+                        cmd.Parameters.AddWithValue("@date", date.Date);
+                        using (SqlDataReader r = cmd.ExecuteReader())
+                        {
+                            if (r.Read())
+                            {
+                                d.VoidCount = Convert.ToInt32(r["VoidCount"]);
+                                d.VoidAmount = Convert.ToDecimal(r["VoidAmount"]);
+                            }
+                        }
+                    }
+
+                    // 5. Check if record exists in DailySettlements
+                    bool isSaved = false;
+                    using (SqlCommand cmd = new SqlCommand(@"
+                        SELECT TOP 1 
+                            s.OpeningCash, s.CashSales, s.DueCollections, s.CardSales, s.QRSales, s.CardQRSales,
+                            s.DuesCreated, s.ExpectedCash, s.ActualCash, s.Variance, s.Remarks, s.Refunds, s.VoidAmount,
+                            ISNULL(u.FullName, 'Administrator') AS SettledByName
+                        FROM DailySettlements s
+                        LEFT JOIN Users u ON s.SettlementBy = u.Id
+                        WHERE CAST(s.SettlementDate as DATE) = @date
+                        ORDER BY s.Id DESC", conn))
+                    {
+                        cmd.Parameters.AddWithValue("@date", date.Date);
+                        using (SqlDataReader r = cmd.ExecuteReader())
+                        {
+                            if (r.Read())
+                            {
+                                isSaved = true;
+                                d.OpeningCash = Convert.ToDecimal(r["OpeningCash"]);
+                                d.CashSales = Convert.ToDecimal(r["CashSales"]);
+                                d.DueCollectionsTotal = Convert.ToDecimal(r["DueCollections"]);
+                                d.CardSales = Convert.ToDecimal(r["CardSales"]);
+                                decimal cardQRSales = Convert.ToDecimal(r["CardQRSales"]);
+                                d.QRSales = r["QRSales"] != DBNull.Value ? Convert.ToDecimal(r["QRSales"]) : (cardQRSales - d.CardSales);
+                                d.DuesCreated = Convert.ToDecimal(r["DuesCreated"]);
+                                d.ExpectedCash = Convert.ToDecimal(r["ExpectedCash"]);
+                                d.ActualCash = actualCashOverride.HasValue ? actualCashOverride.Value : Convert.ToDecimal(r["ActualCash"]);
+                                d.Variance = actualCashOverride.HasValue ? (d.ActualCash - d.ExpectedCash) : Convert.ToDecimal(r["Variance"]);
+                                d.Remarks = !string.IsNullOrEmpty(remarksOverride) ? remarksOverride : (r["Remarks"]?.ToString() ?? "");
+                                d.SettledBy = r["SettledByName"]?.ToString() ?? "Administrator";
+                                if (d.VoidAmount == 0) d.VoidAmount = Convert.ToDecimal(r["VoidAmount"]);
+                            }
+                        }
+                    }
+
+                    // If not saved in DailySettlements yet, calculate live metrics
+                    if (!isSaved)
+                    {
+                        d.SettledBy = Session.FullName ?? "System Administrator";
+                        d.Remarks = !string.IsNullOrEmpty(remarksOverride) ? remarksOverride : "Daily settlement reconciliation completed.";
+
+                        // Opening Cash
+                        using (SqlCommand cmd = new SqlCommand("SELECT TOP 1 ActualCash FROM DailySettlements WHERE CAST(SettlementDate as DATE) < @date ORDER BY SettlementDate DESC, Id DESC", conn))
+                        {
+                            cmd.Parameters.AddWithValue("@date", date.Date);
+                            object obj = cmd.ExecuteScalar();
+                            if (obj != null && obj != DBNull.Value) d.OpeningCash = Convert.ToDecimal(obj);
+                        }
+
+                        // Cash Sales
+                        using (SqlCommand cmd = new SqlCommand(@"
+                            SELECT ISNULL(SUM(
+                                CASE 
+                                    WHEN PaymentMethod = 'Cash' THEN (CASE WHEN AmountPaid > GrandTotal THEN GrandTotal ELSE AmountPaid END)
+                                    WHEN PaymentMethod = 'Split' THEN (CASE WHEN ISNULL(CashAmount, 0) > GrandTotal THEN GrandTotal ELSE ISNULL(CashAmount, 0) END)
+                                    ELSE 0 
+                                END), 0) 
+                            FROM Sales 
+                            WHERE CAST(SaleDate as DATE) = @date", conn))
+                        {
+                            cmd.Parameters.AddWithValue("@date", date.Date);
+                            d.CashSales = Convert.ToDecimal(cmd.ExecuteScalar());
+                        }
+
+                        // Card Sales
+                        using (SqlCommand cmd = new SqlCommand(@"
+                            SELECT ISNULL(SUM(
+                                CASE 
+                                    WHEN PaymentMethod = 'Card' THEN (CASE WHEN AmountPaid > GrandTotal THEN GrandTotal ELSE AmountPaid END)
+                                    ELSE 0 
+                                END), 0) 
+                            FROM Sales 
+                            WHERE CAST(SaleDate as DATE) = @date", conn))
+                        {
+                            cmd.Parameters.AddWithValue("@date", date.Date);
+                            d.CardSales = Convert.ToDecimal(cmd.ExecuteScalar());
+                        }
+
+                        // QR / UPI Sales
+                        using (SqlCommand cmd = new SqlCommand(@"
+                            SELECT ISNULL(SUM(
+                                CASE 
+                                    WHEN PaymentMethod NOT IN ('Cash', 'Card', 'Split') THEN (CASE WHEN AmountPaid > GrandTotal THEN GrandTotal ELSE AmountPaid END)
+                                    WHEN PaymentMethod = 'Split' THEN (CASE WHEN ISNULL(OnlineAmount, 0) > GrandTotal THEN GrandTotal ELSE ISNULL(OnlineAmount, 0) END)
+                                    ELSE 0 
+                                END), 0) 
+                            FROM Sales 
+                            WHERE CAST(SaleDate as DATE) = @date", conn))
+                        {
+                            cmd.Parameters.AddWithValue("@date", date.Date);
+                            d.QRSales = Convert.ToDecimal(cmd.ExecuteScalar());
+                        }
+
+                        // Dues Created
+                        using (SqlCommand cmd = new SqlCommand("SELECT ISNULL(SUM(DueAmount), 0) FROM Sales WHERE CAST(SaleDate as DATE) = @date", conn))
+                        {
+                            cmd.Parameters.AddWithValue("@date", date.Date);
+                            d.DuesCreated = Convert.ToDecimal(cmd.ExecuteScalar());
+                        }
+
+                        // Dues Collections
+                        decimal prevDues = 0;
+                        using (SqlCommand cmd = new SqlCommand(@"
+                            SELECT ISNULL(SUM(cp.Amount), 0)
+                            FROM CustomerPayments cp
+                            LEFT JOIN Sales s ON cp.SaleId = s.Id
+                            WHERE CAST(cp.PaymentDate as DATE) = @date
+                              AND cp.PaymentMethod = 'Cash'
+                              AND (CAST(s.SaleDate as DATE) < @date OR cp.SaleId IS NULL)", conn))
+                        {
+                            cmd.Parameters.AddWithValue("@date", date.Date);
+                            prevDues = Convert.ToDecimal(cmd.ExecuteScalar());
+                        }
+
+                        decimal todayRepayments = 0;
+                        using (SqlCommand cmd = new SqlCommand("SELECT ISNULL(SUM(Amount), 0) FROM CustomerPayments WHERE CAST(PaymentDate as DATE) = @date AND PaymentMethod = 'Cash'", conn))
+                        {
+                            cmd.Parameters.AddWithValue("@date", date.Date);
+                            decimal tot = Convert.ToDecimal(cmd.ExecuteScalar());
+                            todayRepayments = tot - prevDues;
+                            if (todayRepayments < 0) todayRepayments = 0;
+                        }
+
+                        d.DueCollectionsPrev = prevDues;
+                        d.DueCollectionsToday = todayRepayments;
+                        d.DueCollectionsTotal = prevDues + todayRepayments;
+
+                        // Card & QR dues
+                        using (SqlCommand cmd = new SqlCommand("SELECT ISNULL(SUM(Amount), 0) FROM CustomerPayments WHERE CAST(PaymentDate as DATE) = @date AND PaymentMethod = 'Card'", conn))
+                        {
+                            cmd.Parameters.AddWithValue("@date", date.Date);
+                            d.CardSales += Convert.ToDecimal(cmd.ExecuteScalar());
+                        }
+                        using (SqlCommand cmd = new SqlCommand("SELECT ISNULL(SUM(Amount), 0) FROM CustomerPayments WHERE CAST(PaymentDate as DATE) = @date AND PaymentMethod NOT IN ('Cash', 'Card')", conn))
+                        {
+                            cmd.Parameters.AddWithValue("@date", date.Date);
+                            d.QRSales += Convert.ToDecimal(cmd.ExecuteScalar());
+                        }
+
+                        d.ExpectedCash = d.CashSales + d.DueCollectionsTotal - d.CashRefunds;
+                        d.ActualCash = actualCashOverride.HasValue ? actualCashOverride.Value : d.ExpectedCash;
+                        d.Variance = d.ActualCash - d.ExpectedCash;
+                    }
+
+                    d.TotalCollections = d.CashSales + d.CardSales + d.QRSales + d.DueCollectionsTotal;
+
+                    // 6. Item-wise sales breakdown for that date
+                    try
+                    {
+                        using (SqlCommand cmd = new SqlCommand(@"
+                            SELECT 
+                                CASE 
+                                    WHEN sd.ItemType = 'Packaging' THEN 'Packaging Charges'
+                                    WHEN sd.ItemType = 'Service' THEN ISNULL(s.Name, 'Service Item')
+                                    ELSE ISNULL(p.Name, 'Menu Item') 
+                                END AS ItemName,
+                                CASE 
+                                    WHEN sd.ItemType = 'Packaging' THEN 'Packaging'
+                                    WHEN sd.ItemType = 'Service' THEN ISNULL(s.Category, 'Service')
+                                    ELSE ISNULL(p.Category, 'Food & Beverage') 
+                                END AS CategoryName,
+                                AVG(sd.UnitPrice) AS AvgRate,
+                                SUM(sd.Quantity) AS TotalQty,
+                                SUM(sd.Total) AS TotalAmount
+                            FROM SaleDetails sd
+                            INNER JOIN Sales sa ON sd.SaleId = sa.Id
+                            LEFT JOIN Products p ON sd.ProductId = p.Id
+                            LEFT JOIN Services s ON sd.ServiceId = s.Id
+                            WHERE CAST(sa.SaleDate AS DATE) = @date
+                            GROUP BY 
+                                CASE 
+                                    WHEN sd.ItemType = 'Packaging' THEN 'Packaging Charges'
+                                    WHEN sd.ItemType = 'Service' THEN ISNULL(s.Name, 'Service Item')
+                                    ELSE ISNULL(p.Name, 'Menu Item') 
+                                END,
+                                CASE 
+                                    WHEN sd.ItemType = 'Packaging' THEN 'Packaging'
+                                    WHEN sd.ItemType = 'Service' THEN ISNULL(s.Category, 'Service')
+                                    ELSE ISNULL(p.Category, 'Food & Beverage') 
+                                END
+                            ORDER BY TotalAmount DESC, TotalQty DESC", conn))
+                        {
+                            cmd.Parameters.AddWithValue("@date", date.Date);
+                            using (SqlDataReader r = cmd.ExecuteReader())
+                            {
+                                int sn = 1;
+                                while (r.Read())
+                                {
+                                    var item = new SettlementSoldItem
+                                    {
+                                        SerialNo = sn++,
+                                        ItemName = r["ItemName"]?.ToString() ?? "",
+                                        Category = r["CategoryName"]?.ToString() ?? "General",
+                                        Rate = r["AvgRate"] != DBNull.Value ? Convert.ToDecimal(r["AvgRate"]) : 0m,
+                                        Quantity = r["TotalQty"] != DBNull.Value ? Convert.ToInt32(r["TotalQty"]) : 0,
+                                        TotalAmount = r["TotalAmount"] != DBNull.Value ? Convert.ToDecimal(r["TotalAmount"]) : 0m
+                                    };
+                                    d.SoldItems.Add(item);
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
 
             return d;
         }
@@ -848,6 +1402,577 @@ namespace MeroDokan
                     y += nH + 4;
                 }
             }
+        }
+
+        private static int EstimateSettlementHeight(SettlementPrintData d)
+        {
+            int h = 450;
+            if (!string.IsNullOrEmpty(d.LogoPath) && File.Exists(d.LogoPath))
+            {
+                h += 75;
+            }
+            if (!string.IsNullOrEmpty(d.Address))
+            {
+                h += Math.Max(20, (d.Address.Length / 25 + 1) * 16);
+            }
+            if (!string.IsNullOrEmpty(d.Remarks))
+            {
+                h += Math.Max(25, (d.Remarks.Length / 30 + 1) * 16);
+            }
+            if (d.SoldItems != null && d.SoldItems.Count > 0)
+            {
+                h += 70 + d.SoldItems.Count * 25;
+            }
+            h += 350;
+            return Math.Max(h, 880);
+        }
+
+        private static void DrawSolidLine(Graphics g, float y)
+        {
+            using (Pen p = new Pen(Color.Black, 1.2f))
+            {
+                g.DrawLine(p, MarginLeft, y, MarginLeft + UsableWidth, y);
+            }
+        }
+
+        private static void DrawDottedLine(Graphics g, float y)
+        {
+            using (Pen p = new Pen(Color.Black, 1))
+            {
+                p.DashPattern = new float[] { 1, 2 };
+                g.DrawLine(p, MarginLeft, y, MarginLeft + UsableWidth, y);
+            }
+        }
+
+        private static void DrawRowKeyValue(Graphics g, Font fKey, Font fVal, Brush br, string key, string val, ref float y, float rowHeight, StringFormat sfRight)
+        {
+            g.DrawString(key, fKey, br, MarginLeft, y);
+            g.DrawString(val, fVal, br, new RectangleF(MarginLeft, y, UsableWidth, rowHeight), sfRight);
+            y += rowHeight;
+        }
+
+        private static void DrawSettlementSlip(Graphics g, SettlementPrintData d)
+        {
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+
+            Brush br = Brushes.Black;
+            StringFormat sfCenter = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Near, Trimming = StringTrimming.Word };
+            StringFormat sfRight = new StringFormat { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Near };
+            StringFormat sfLeft = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Near, Trimming = StringTrimming.Word };
+
+            using (Font fTitle = new Font("Segoe UI", 10.5f, FontStyle.Bold))
+            using (Font fHead = new Font("Segoe UI", 10f, FontStyle.Bold))
+            using (Font fBody = new Font("Segoe UI", 8.5f, FontStyle.Regular))
+            using (Font fBold = new Font("Segoe UI", 8.5f, FontStyle.Bold))
+            using (Font fSection = new Font("Segoe UI", 8.5f, FontStyle.Bold))
+            using (Font fFoot = new Font("Segoe UI", 8f, FontStyle.Regular))
+            using (Font fSmall = new Font("Segoe UI", 7.5f, FontStyle.Regular))
+            using (Font fSmallBold = new Font("Segoe UI", 7.5f, FontStyle.Bold))
+            {
+                float y = 10;
+
+                // 0. Logo
+                if (!string.IsNullOrEmpty(d.LogoPath) && File.Exists(d.LogoPath))
+                {
+                    try
+                    {
+                        using (Image img = Image.FromFile(d.LogoPath))
+                        {
+                            float logoSize = 65f;
+                            float logoX = MarginLeft + (UsableWidth - logoSize) / 2f;
+                            g.DrawImage(img, logoX, y, logoSize, logoSize);
+                            y += logoSize + 6;
+                        }
+                    }
+                    catch { }
+                }
+
+                // 1. Cafe Name & Contact
+                if (!string.IsNullOrEmpty(d.ShopName))
+                {
+                    SizeF shopSz = g.MeasureString(d.ShopName, fHead, (int)UsableWidth, sfCenter);
+                    float h = Math.Max(18f, (float)Math.Ceiling(shopSz.Height));
+                    g.DrawString(d.ShopName, fHead, br, new RectangleF(MarginLeft, y, UsableWidth, h), sfCenter);
+                    y += h + 2;
+                }
+
+                if (!string.IsNullOrEmpty(d.GSTIN))
+                {
+                    g.DrawString("GSTIN: " + d.GSTIN, fBody, br, new RectangleF(MarginLeft, y, UsableWidth, 16), sfCenter);
+                    y += 17;
+                }
+
+                if (!string.IsNullOrEmpty(d.Address))
+                {
+                    string[] addrLines = d.Address.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (string line in addrLines)
+                    {
+                        SizeF sz = g.MeasureString(line, fBody, (int)UsableWidth, sfCenter);
+                        float h = Math.Max(15f, (float)Math.Ceiling(sz.Height));
+                        g.DrawString(line, fBody, br, new RectangleF(MarginLeft, y, UsableWidth, h), sfCenter);
+                        y += h + 2;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(d.ContactNo))
+                {
+                    g.DrawString("Ph: " + d.ContactNo, fBody, br, new RectangleF(MarginLeft, y, UsableWidth, 16), sfCenter);
+                    y += 17;
+                }
+
+                DrawSolidLine(g, y);
+                y += 6;
+
+                // 2. Report Title
+                g.DrawString("DAILY SETTLEMENT REPORT", fTitle, br, new RectangleF(MarginLeft, y, UsableWidth, 18), sfCenter);
+                y += 18;
+                g.DrawString("(DAY CLOSE / Z-REPORT)", fSmallBold, br, new RectangleF(MarginLeft, y, UsableWidth, 14), sfCenter);
+                y += 16;
+
+                DrawSolidLine(g, y);
+                y += 6;
+
+                // 3. Metadata
+                DrawRowKeyValue(g, fBody, fBold, br, "Settlement Date:", d.SettlementDate.ToString("dd-MMM-yyyy"), ref y, 16, sfRight);
+                DrawRowKeyValue(g, fBody, fBody, br, "Printed At:", d.PrintTime.ToString("dd-MMM-yyyy hh:mm tt"), ref y, 16, sfRight);
+                DrawRowKeyValue(g, fBody, fBody, br, "Settled By:", d.SettledBy, ref y, 16, sfRight);
+
+                string auditStatus;
+                if (Math.Abs(d.Variance) < 0.01m)
+                    auditStatus = "BALANCED ✓";
+                else if (d.Variance < 0)
+                    auditStatus = $"SHORT (-Rs. {Math.Abs(d.Variance):0.00})";
+                else
+                    auditStatus = $"SURPLUS (+Rs. {d.Variance:0.00})";
+
+                DrawRowKeyValue(g, fBody, fBold, br, "Audit Result:", auditStatus, ref y, 16, sfRight);
+
+                // 4. Section 1: Sales Summary
+                y += 4;
+                DrawDashedLine(g, y);
+                y += 5;
+                g.DrawString("--- SALES & BILLING SUMMARY ---", fSection, br, new RectangleF(MarginLeft, y, UsableWidth, 16), sfCenter);
+                y += 16;
+                DrawDashedLine(g, y);
+                y += 6;
+
+                string billCountStr = d.TotalBillsCount == 1 ? "1 Bill" : $"{d.TotalBillsCount} Bills";
+                DrawRowKeyValue(g, fBody, fBody, br, $"Gross Sales ({billCountStr}):", $"Rs. {d.GrossSales:N2}", ref y, 16, sfRight);
+
+                if (d.TotalDiscounts > 0)
+                {
+                    DrawRowKeyValue(g, fBody, fBody, br, "Discounts Given:", $"-Rs. {d.TotalDiscounts:N2}", ref y, 16, sfRight);
+                }
+
+                if (d.ReturnsAndRefunds > 0)
+                {
+                    DrawRowKeyValue(g, fBody, fBody, br, "Sales Returns/Refunds:", $"-Rs. {d.ReturnsAndRefunds:N2}", ref y, 16, sfRight);
+                }
+
+                DrawDottedLine(g, y);
+                y += 5;
+                DrawRowKeyValue(g, fBold, fBold, br, "NET SALES TODAY:", $"Rs. {d.NetSales:N2}", ref y, 17, sfRight);
+
+                if (d.VoidAmount > 0 || d.VoidCount > 0)
+                {
+                    string voidItemStr = d.VoidCount > 0 ? $" ({d.VoidCount} Items)" : "";
+                    DrawRowKeyValue(g, fBody, fBody, br, $"Void/Cancelled{voidItemStr}:", $"Rs. {d.VoidAmount:N2}", ref y, 16, sfRight);
+                }
+
+                // 5. Section 2: Payment / Tender Breakdown
+                y += 4;
+                DrawDashedLine(g, y);
+                y += 5;
+                g.DrawString("--- PAYMENT / TENDER BREAKDOWN ---", fSection, br, new RectangleF(MarginLeft, y, UsableWidth, 16), sfCenter);
+                y += 16;
+                DrawDashedLine(g, y);
+                y += 6;
+
+                DrawRowKeyValue(g, fBody, fBody, br, "Cash Sales:", $"Rs. {d.CashSales:N2}", ref y, 16, sfRight);
+                DrawRowKeyValue(g, fBody, fBody, br, "Card Payments:", $"Rs. {d.CardSales:N2}", ref y, 16, sfRight);
+                DrawRowKeyValue(g, fBody, fBody, br, "QR / Online / UPI:", $"Rs. {d.QRSales:N2}", ref y, 16, sfRight);
+
+                if (d.DuesCreated > 0)
+                {
+                    DrawRowKeyValue(g, fBody, fBody, br, "Credit / Dues Created:", $"Rs. {d.DuesCreated:N2}", ref y, 16, sfRight);
+                }
+
+                if (d.DueCollectionsTotal > 0)
+                {
+                    DrawRowKeyValue(g, fBody, fBody, br, "Prev Dues Recovered:", $"Rs. {d.DueCollectionsTotal:N2}", ref y, 16, sfRight);
+                }
+
+                DrawDottedLine(g, y);
+                y += 5;
+                DrawRowKeyValue(g, fBold, fBold, br, "TOTAL COLLECTIONS:", $"Rs. {d.TotalCollections:N2}", ref y, 17, sfRight);
+
+                // 6. Section 3: Cash Drawer Audit
+                y += 4;
+                DrawDashedLine(g, y);
+                y += 5;
+                g.DrawString("--- CASH DRAWER RECONCILIATION ---", fSection, br, new RectangleF(MarginLeft, y, UsableWidth, 16), sfCenter);
+                y += 16;
+                DrawDashedLine(g, y);
+                y += 6;
+
+                DrawRowKeyValue(g, fBody, fBody, br, "Opening Cash In Hand:", $"Rs. {d.OpeningCash:N2}", ref y, 16, sfRight);
+                DrawRowKeyValue(g, fBody, fBody, br, "Add: Cash Sales Today:", $"+Rs. {d.CashSales:N2}", ref y, 16, sfRight);
+
+                if (d.DueCollectionsTotal > 0)
+                {
+                    DrawRowKeyValue(g, fBody, fBody, br, "Add: Dues Recoveries:", $"+Rs. {d.DueCollectionsTotal:N2}", ref y, 16, sfRight);
+                }
+
+                if (d.CashRefunds > 0)
+                {
+                    DrawRowKeyValue(g, fBody, fBody, br, "Less: Cash Refunds Paid:", $"-Rs. {d.CashRefunds:N2}", ref y, 16, sfRight);
+                }
+
+                DrawDottedLine(g, y);
+                y += 5;
+                DrawRowKeyValue(g, fBold, fBold, br, "EXPECTED CASH IN DRAWER:", $"Rs. {d.ExpectedCash:N2}", ref y, 17, sfRight);
+                DrawRowKeyValue(g, fBold, fBold, br, "ACTUAL CASH COUNTED:", $"Rs. {d.ActualCash:N2}", ref y, 17, sfRight);
+
+                DrawSolidLine(g, y);
+                y += 5;
+
+                string varianceText;
+                if (Math.Abs(d.Variance) < 0.01m)
+                    varianceText = "Rs. 0.00 (MATCHED ✓)";
+                else if (d.Variance < 0)
+                    varianceText = $"-Rs. {Math.Abs(d.Variance):N2} (SHORTAGE)";
+                else
+                    varianceText = $"+Rs. {d.Variance:N2} (SURPLUS)";
+
+                DrawRowKeyValue(g, fBold, fBold, br, "CASH VARIANCE:", varianceText, ref y, 18, sfRight);
+
+                // 7. Section: Item-wise Sold List (if items exist)
+                if (d.SoldItems != null && d.SoldItems.Count > 0)
+                {
+                    y += 4;
+                    DrawDashedLine(g, y);
+                    y += 5;
+                    int totalSoldItemsQty = 0;
+                    foreach (var sit in d.SoldItems) totalSoldItemsQty += sit.Quantity;
+                    g.DrawString($"--- ITEMS SOLD TODAY ({totalSoldItemsQty} Units) ---", fSection, br, new RectangleF(MarginLeft, y, UsableWidth, 16), sfCenter);
+                    y += 16;
+                    DrawDashedLine(g, y);
+                    y += 6;
+
+                    g.DrawString("Item", fBold, br, MarginLeft, y);
+                    g.DrawString("Qty", fBold, br, MarginLeft + 160, y);
+                    g.DrawString("Amt", fBold, br, new RectangleF(MarginLeft, y, UsableWidth, 15), sfRight);
+                    y += 16;
+                    DrawDottedLine(g, y);
+                    y += 5;
+
+                    foreach (var itm in d.SoldItems)
+                    {
+                        SizeF nSz = g.MeasureString(itm.ItemName, fBody, 150, sfLeft);
+                        float rH = Math.Max(16f, (float)Math.Ceiling(nSz.Height));
+                        g.DrawString(itm.ItemName, fBody, br, new RectangleF(MarginLeft, y, 150, rH), sfLeft);
+                        g.DrawString(itm.Quantity.ToString(), fBody, br, MarginLeft + 160, y);
+                        g.DrawString(itm.TotalAmount.ToString("0.00"), fBody, br, new RectangleF(MarginLeft, y, UsableWidth, 15), sfRight);
+                        y += rH + 2;
+                    }
+                    DrawDottedLine(g, y);
+                    y += 5;
+                    decimal totalSoldAmt = 0;
+                    foreach (var sit in d.SoldItems) totalSoldAmt += sit.TotalAmount;
+                    DrawRowKeyValue(g, fBold, fBold, br, $"Total Sold ({totalSoldItemsQty} itm):", $"Rs. {totalSoldAmt:N2}", ref y, 17, sfRight);
+                }
+
+                // 8. Remarks
+                if (!string.IsNullOrEmpty(d.Remarks))
+                {
+                    DrawDashedLine(g, y);
+                    y += 5;
+                    g.DrawString("Remarks / Notes:", fBold, br, MarginLeft, y);
+                    y += 15;
+                    SizeF remSz = g.MeasureString(d.Remarks, fBody, (int)UsableWidth, sfLeft);
+                    float rH = Math.Max(16f, (float)Math.Ceiling(remSz.Height));
+                    g.DrawString(d.Remarks, fBody, br, new RectangleF(MarginLeft, y, UsableWidth, rH), sfLeft);
+                    y += rH + 4;
+                }
+
+                // 9. Signatures
+                y += 8;
+                DrawDashedLine(g, y);
+                y += 16;
+
+                float halfWidth = UsableWidth / 2f;
+                g.DrawString("Cashier Sign:", fSmallBold, br, MarginLeft, y);
+                g.DrawString("Manager Sign:", fSmallBold, br, MarginLeft + halfWidth, y);
+                y += 24;
+                g.DrawString("_______________", fBody, br, MarginLeft, y);
+                g.DrawString("_______________", fBody, br, MarginLeft + halfWidth, y);
+                y += 20;
+
+                DrawSolidLine(g, y);
+                y += 6;
+
+                // 10. Footer
+                g.DrawString("*** END OF DAILY SETTLEMENT ***", fSmallBold, br, new RectangleF(MarginLeft, y, UsableWidth, 14), sfCenter);
+                y += 15;
+                g.DrawString("Powered by - MeroDokan", fFoot, br, new RectangleF(MarginLeft, y, UsableWidth, 14), sfCenter);
+                y += 25;
+            }
+        }
+
+        private static void DrawA4SettlementPage(Graphics g, SettlementPrintData d, Rectangle bounds, ref int currentItemIndex, ref int pageNum, out bool hasMore)
+        {
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+
+            StringFormat sfCenter = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+            StringFormat sfRight = new StringFormat { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Center };
+            StringFormat sfLeft = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter };
+            StringFormat sfTopLeft = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Near, Trimming = StringTrimming.Word };
+            StringFormat sfTopRight = new StringFormat { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Near };
+
+            using (Font fShop = new Font("Segoe UI", 16f, FontStyle.Bold))
+            using (Font fTitle = new Font("Segoe UI", 13f, FontStyle.Bold))
+            using (Font fSection = new Font("Segoe UI", 9.5f, FontStyle.Bold))
+            using (Font fBody = new Font("Segoe UI", 8.5f, FontStyle.Regular))
+            using (Font fBold = new Font("Segoe UI", 8.5f, FontStyle.Bold))
+            using (Font fRow = new Font("Segoe UI", 8.5f, FontStyle.Regular))
+            using (Font fRowBold = new Font("Segoe UI", 8.5f, FontStyle.Bold))
+            using (Font fSmall = new Font("Segoe UI", 8f, FontStyle.Regular))
+            using (Font fSmallBold = new Font("Segoe UI", 8f, FontStyle.Bold))
+            using (Font fTableHead = new Font("Segoe UI", 8.5f, FontStyle.Bold))
+            {
+                float left = bounds.Left;
+                float width = bounds.Width;
+                float bottom = bounds.Bottom;
+                float y = bounds.Top;
+
+                // 1. Header (Page 1 = Full Header, Page 2+ = Compact Header)
+                if (pageNum == 1)
+                {
+                    float logoW = 0;
+                    if (!string.IsNullOrEmpty(d.LogoPath) && File.Exists(d.LogoPath))
+                    {
+                        try
+                        {
+                            using (Image img = Image.FromFile(d.LogoPath))
+                            {
+                                logoW = 55f;
+                                g.DrawImage(img, left, y, logoW, logoW);
+                            }
+                        }
+                        catch { }
+                    }
+
+                    float textLeft = left + (logoW > 0 ? logoW + 12 : 0);
+                    g.DrawString(d.ShopName, fShop, Brushes.Black, textLeft, y - 2);
+
+                    string contactLine = "";
+                    if (!string.IsNullOrEmpty(d.Address)) contactLine += d.Address.Replace("\r\n", ", ").Replace("\n", ", ") + " ";
+                    if (!string.IsNullOrEmpty(d.GSTIN)) contactLine += "• GSTIN: " + d.GSTIN + " ";
+                    if (!string.IsNullOrEmpty(d.ContactNo)) contactLine += "• Ph: " + d.ContactNo;
+
+                    // Document Title Block (Right aligned)
+                    float rightBlockW = 275;
+                    float rightX = left + width - rightBlockW;
+                    g.DrawString(contactLine, fSmall, Brushes.DimGray, new RectangleF(textLeft, y + 24, width - (logoW > 0 ? logoW + 12 : 0) - (rightBlockW + 10), 32), sfTopLeft);
+
+                    g.DrawString("DAILY SETTLEMENT REPORT", fTitle, Brushes.Black, new RectangleF(rightX, y, rightBlockW, 20), sfTopRight);
+                    g.DrawString("DAY CLOSE & ITEM-WISE SALES AUDIT", fSmallBold, Brushes.DarkSlateGray, new RectangleF(rightX, y + 22, rightBlockW, 16), sfTopRight);
+                    g.DrawString($"Date: {d.SettlementDate:dd-MMM-yyyy}  |  By: {d.SettledBy}", fSmall, Brushes.DimGray, new RectangleF(rightX, y + 38, rightBlockW, 16), sfTopRight);
+
+                    y += Math.Max(logoW, 58f) + 6;
+
+                    // Accent Line
+                    using (Pen accentPen = new Pen(Color.FromArgb(16, 185, 129), 2f))
+                    {
+                        g.DrawLine(accentPen, left, y, left + width, y);
+                    }
+                    y += 8;
+
+                    // 2. Summary Boxes (Two Cards side-by-side)
+                    float colW = (width - 14) / 2f;
+                    float cardH = 175f;
+                    float col1X = left;
+                    float col2X = left + colW + 14;
+
+                    using (SolidBrush cardBg = new SolidBrush(Color.FromArgb(249, 250, 251)))
+                    {
+                        g.FillRectangle(cardBg, col1X, y, colW, cardH);
+                        g.FillRectangle(cardBg, col2X, y, colW, cardH);
+                    }
+                    using (Pen borderPen = new Pen(Color.FromArgb(229, 231, 235), 1f))
+                    {
+                        g.DrawRectangle(borderPen, col1X, y, colW, cardH);
+                        g.DrawRectangle(borderPen, col2X, y, colW, cardH);
+                    }
+
+                    using (SolidBrush headBg = new SolidBrush(Color.FromArgb(243, 244, 246)))
+                    {
+                        g.FillRectangle(headBg, col1X, y, colW, 22);
+                        g.FillRectangle(headBg, col2X, y, colW, 22);
+                    }
+                    g.DrawString("1. SALES & PAYMENT SUMMARY", fSection, Brushes.Black, col1X + 8, y + 3);
+                    g.DrawString("2. CASH DRAWER AUDIT", fSection, Brushes.Black, col2X + 8, y + 3);
+
+                    // Card 1 Rows
+                    float rY = y + 26;
+                    float rH = 16f;
+                    string billStr = d.TotalBillsCount == 1 ? "1 Bill" : $"{d.TotalBillsCount} Bills";
+                    DrawCardRow(g, fBody, fBody, $"Gross Sales ({billStr}):", $"Rs. {d.GrossSales:N2}", col1X + 8, rY, colW - 16, sfRight); rY += rH;
+                    if (d.TotalDiscounts > 0) { DrawCardRow(g, fBody, fBody, "Discounts Given:", $"-Rs. {d.TotalDiscounts:N2}", col1X + 8, rY, colW - 16, sfRight); rY += rH; }
+                    if (d.ReturnsAndRefunds > 0) { DrawCardRow(g, fBody, fBody, "Returns & Refunds:", $"-Rs. {d.ReturnsAndRefunds:N2}", col1X + 8, rY, colW - 16, sfRight); rY += rH; }
+                    DrawCardRow(g, fBold, fBold, "Net Sales Today:", $"Rs. {d.NetSales:N2}", col1X + 8, rY, colW - 16, sfRight); rY += rH;
+                    g.DrawLine(Pens.LightGray, col1X + 8, rY, col1X + colW - 8, rY); rY += 3;
+                    DrawCardRow(g, fBody, fBody, "Cash Sales:", $"Rs. {d.CashSales:N2}", col1X + 8, rY, colW - 16, sfRight); rY += rH;
+                    DrawCardRow(g, fBody, fBody, "Card Payments:", $"Rs. {d.CardSales:N2}", col1X + 8, rY, colW - 16, sfRight); rY += rH;
+                    DrawCardRow(g, fBody, fBody, "QR / UPI Online:", $"Rs. {d.QRSales:N2}", col1X + 8, rY, colW - 16, sfRight); rY += rH;
+                    if (d.DuesCreated > 0) { DrawCardRow(g, fBody, fBody, "Credit / Dues Created:", $"Rs. {d.DuesCreated:N2}", col1X + 8, rY, colW - 16, sfRight); rY += rH; }
+                    g.DrawLine(Pens.LightGray, col1X + 8, rY, col1X + colW - 8, rY); rY += 3;
+                    DrawCardRow(g, fBold, fBold, "Total Collections:", $"Rs. {d.TotalCollections:N2}", col1X + 8, rY, colW - 16, sfRight);
+
+                    // Card 2 Rows
+                    rY = y + 26;
+                    DrawCardRow(g, fBody, fBody, "Opening Cash In Hand:", $"Rs. {d.OpeningCash:N2}", col2X + 8, rY, colW - 16, sfRight); rY += rH;
+                    DrawCardRow(g, fBody, fBody, "Add: Cash Sales Today:", $"+Rs. {d.CashSales:N2}", col2X + 8, rY, colW - 16, sfRight); rY += rH;
+                    if (d.DueCollectionsTotal > 0) { DrawCardRow(g, fBody, fBody, "Add: Dues Recovered:", $"+Rs. {d.DueCollectionsTotal:N2}", col2X + 8, rY, colW - 16, sfRight); rY += rH; }
+                    if (d.CashRefunds > 0) { DrawCardRow(g, fBody, fBody, "Less: Cash Refunds:", $"-Rs. {d.CashRefunds:N2}", col2X + 8, rY, colW - 16, sfRight); rY += rH; }
+                    g.DrawLine(Pens.LightGray, col2X + 8, rY, col2X + colW - 8, rY); rY += 3;
+                    DrawCardRow(g, fBold, fBold, "Expected Cash in Drawer:", $"Rs. {d.ExpectedCash:N2}", col2X + 8, rY, colW - 16, sfRight); rY += rH;
+                    DrawCardRow(g, fBold, fBold, "Actual Counted Cash:", $"Rs. {d.ActualCash:N2}", col2X + 8, rY, colW - 16, sfRight); rY += rH;
+                    g.DrawLine(Pens.Black, col2X + 8, rY, col2X + colW - 8, rY); rY += 3;
+                    string varText = Math.Abs(d.Variance) < 0.01m ? "Rs. 0.00 (MATCHED ✓)" : (d.Variance < 0 ? $"-Rs. {Math.Abs(d.Variance):N2} (SHORT)" : $"+Rs. {d.Variance:N2} (SURPLUS)");
+                    DrawCardRow(g, fBold, fBold, "Cash Variance:", varText, col2X + 8, rY, colW - 16, sfRight); rY += rH;
+                    if (!string.IsNullOrEmpty(d.Remarks))
+                    {
+                        g.DrawString("Remarks: " + d.Remarks, fSmall, Brushes.DimGray, new RectangleF(col2X + 8, rY + 2, colW - 16, 28), sfTopLeft);
+                    }
+
+                    y += cardH + 12;
+                }
+                else
+                {
+                    g.DrawString($"{d.ShopName} — DAILY SETTLEMENT REPORT — Date: {d.SettlementDate:dd-MMM-yyyy} (Page {pageNum})", fSmallBold, Brushes.DimGray, left, y);
+                    y += 16;
+                    g.DrawLine(Pens.LightGray, left, y, left + width, y);
+                    y += 8;
+                }
+
+                // 3. Item-wise Sold Table Header
+                g.DrawString("3. ITEM-WISE SALES BREAKDOWN (COMPLETE MENU & PRODUCT AUDIT)", fSection, Brushes.Black, left, y);
+                y += 18;
+
+                float colSN = 35;
+                float colItem = 290;
+                float colCat = 140;
+                float colRate = 85;
+                float colQty = 75;
+                float colAmt = width - (colSN + colItem + colCat + colRate + colQty);
+
+                float xSN = left;
+                float xItem = xSN + colSN;
+                float xCat = xItem + colItem;
+                float xRate = xCat + colCat;
+                float xQty = xRate + colRate;
+                float xAmt = xQty + colQty;
+
+                using (SolidBrush thBg = new SolidBrush(Color.FromArgb(229, 231, 235)))
+                {
+                    g.FillRectangle(thBg, left, y, width, 22);
+                }
+                g.DrawRectangle(Pens.DarkGray, left, y, width, 22);
+
+                g.DrawString("S.N.", fTableHead, Brushes.Black, new RectangleF(xSN, y + 3, colSN, 16), sfCenter);
+                g.DrawString("Item Name / Description", fTableHead, Brushes.Black, new RectangleF(xItem + 4, y + 3, colItem - 6, 16), sfLeft);
+                g.DrawString("Category", fTableHead, Brushes.Black, new RectangleF(xCat + 4, y + 3, colCat - 6, 16), sfLeft);
+                g.DrawString("Avg Rate", fTableHead, Brushes.Black, new RectangleF(xRate, y + 3, colRate - 4, 16), sfRight);
+                g.DrawString("Qty Sold", fTableHead, Brushes.Black, new RectangleF(xQty, y + 3, colQty, 16), sfCenter);
+                g.DrawString("Total Amount", fTableHead, Brushes.Black, new RectangleF(xAmt, y + 3, colAmt - 6, 16), sfRight);
+
+                y += 22;
+
+                // 4. Render Sold Items
+                float rowH = 20f;
+                while (currentItemIndex < d.SoldItems.Count)
+                {
+                    if (y + rowH > bottom - 50)
+                    {
+                        g.DrawLine(Pens.Gray, left, y, left + width, y);
+                        g.DrawString($"MeroDokan Cafe System  •  Daily Settlement Report ({d.SettlementDate:yyyy-MM-dd})  •  Page {pageNum}", fSmall, Brushes.Gray, left, bottom - 18);
+                        hasMore = true;
+                        pageNum++;
+                        return;
+                    }
+
+                    var itm = d.SoldItems[currentItemIndex];
+                    if (currentItemIndex % 2 == 1)
+                    {
+                        using (SolidBrush rowBg = new SolidBrush(Color.FromArgb(249, 250, 251)))
+                        {
+                            g.FillRectangle(rowBg, left, y, width, rowH);
+                        }
+                    }
+
+                    g.DrawString(itm.SerialNo.ToString(), fRow, Brushes.Black, new RectangleF(xSN, y + 2, colSN, 16), sfCenter);
+                    g.DrawString(itm.ItemName, fRowBold, Brushes.Black, new RectangleF(xItem + 4, y + 2, colItem - 6, 16), sfLeft);
+                    g.DrawString(itm.Category, fRow, Brushes.DimGray, new RectangleF(xCat + 4, y + 2, colCat - 6, 16), sfLeft);
+                    g.DrawString(itm.Rate.ToString("N2"), fRow, Brushes.Black, new RectangleF(xRate, y + 2, colRate - 4, 16), sfRight);
+                    g.DrawString(itm.Quantity.ToString(), fRowBold, Brushes.Black, new RectangleF(xQty, y + 2, colQty, 16), sfCenter);
+                    g.DrawString(itm.TotalAmount.ToString("N2"), fRowBold, Brushes.Black, new RectangleF(xAmt, y + 2, colAmt - 6, 16), sfRight);
+
+                    g.DrawLine(Pens.LightGray, left, y + rowH, left + width, y + rowH);
+                    y += rowH;
+                    currentItemIndex++;
+                }
+
+                // Table Total Row
+                int totalQty = 0;
+                decimal totalAmt = 0;
+                foreach (var itm in d.SoldItems)
+                {
+                    totalQty += itm.Quantity;
+                    totalAmt += itm.TotalAmount;
+                }
+
+                using (SolidBrush totBg = new SolidBrush(Color.FromArgb(243, 244, 246)))
+                {
+                    g.FillRectangle(totBg, left, y, width, 22);
+                }
+                g.DrawRectangle(Pens.DarkGray, left, y, width, 22);
+
+                g.DrawString($"TOTAL ITEMS SOLD ({totalQty} Total Units):", fSection, Brushes.Black, new RectangleF(xItem + 4, y + 3, colItem + colCat, 16), sfLeft);
+                g.DrawString(totalQty.ToString(), fSection, Brushes.Black, new RectangleF(xQty, y + 3, colQty, 16), sfCenter);
+                g.DrawString($"Rs. {totalAmt:N2}", fSection, Brushes.Black, new RectangleF(xAmt, y + 3, colAmt - 6, 16), sfRight);
+                y += 32;
+
+                // Signatures
+                if (y + 75 > bottom - 30)
+                {
+                    g.DrawString($"MeroDokan Cafe System  •  Daily Settlement Report ({d.SettlementDate:yyyy-MM-dd})  •  Page {pageNum}", fSmall, Brushes.Gray, left, bottom - 18);
+                    hasMore = true;
+                    pageNum++;
+                    return;
+                }
+
+                float sigW = 220;
+                float sig1X = left + 30;
+                float sig2X = left + width - sigW - 30;
+
+                g.DrawLine(Pens.Black, sig1X, y + 35, sig1X + sigW, y + 35);
+                g.DrawString("Cashier / Prepared By Signature", fSmallBold, Brushes.Black, new RectangleF(sig1X, y + 40, sigW, 16), sfCenter);
+
+                g.DrawLine(Pens.Black, sig2X, y + 35, sig2X + sigW, y + 35);
+                g.DrawString("Manager / Audit Verified Signature", fSmallBold, Brushes.Black, new RectangleF(sig2X, y + 40, sigW, 16), sfCenter);
+
+                g.DrawString($"MeroDokan Cafe System  •  Daily Settlement Report ({d.SettlementDate:yyyy-MM-dd})  •  Page {pageNum}", fSmall, Brushes.Gray, left, bottom - 18);
+                hasMore = false;
+            }
+        }
+
+        private static void DrawCardRow(Graphics g, Font fKey, Font fVal, string key, string val, float x, float y, float w, StringFormat sfRight)
+        {
+            g.DrawString(key, fKey, Brushes.Black, x, y);
+            g.DrawString(val, fVal, Brushes.Black, new RectangleF(x, y, w, 16), sfRight);
         }
         #endregion
     }
