@@ -43,6 +43,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+Name: "posiflexdriver"; Description: "Launch Posiflex PP-8000 / PP-8800 Thermal Printer Driver Setup"; GroupDescription: "Hardware Drivers:"; Flags: unchecked
 
 [Files]
 ; Copy all published files and subdirectories, excluding pdb files and dbconfig.txt
@@ -56,11 +57,14 @@ Name: "{app}"; Permissions: users-modify
 [Icons]
 ; Start Menu and Desktop Shortcuts with custom logo icon
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"
+Name: "{autoprograms}\{#MyAppName}\Posiflex Thermal Printer Driver Setup"; Filename: "{app}\Drivers\Posiflex\install_pp.exe"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
 ; Silently configure and initialize database during installation
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""& '{app}\Setup_Database.ps1' -Silent"""; StatusMsg: "Configuring and initializing database..."; Flags: runhidden waituntilterminated
+; Optional Posiflex driver installer execution
+Filename: "{app}\Drivers\Posiflex\install_pp.exe"; Description: "Install Posiflex Thermal Printer Driver (PP-8000 / PP-8800)"; Tasks: posiflexdriver; Flags: postinstall skipifsilent unchecked
 ; Option to launch application upon installation finish
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 

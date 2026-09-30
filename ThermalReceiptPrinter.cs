@@ -67,25 +67,36 @@ namespace MeroDokan
             }
         }
 
-        public static void PrintKOT(int kotId)
+        public static bool PrintKOT(int kotId, out string printerUsed, out string errorMessage)
         {
+            printerUsed = "";
+            errorMessage = "";
             try
             {
                 PrintDocument doc = BuildKotDocument(kotId);
-                string printer = doc.PrinterSettings.PrinterName;
+                printerUsed = doc.PrinterSettings.PrinterName;
                 // If no physical thermal printer is configured or default is PDF,
-                // do NOT prompt to save PDF in system drive.
-                if (IsVirtualOrPdfPrinter(printer))
+                // do NOT prompt to save PDF in system drive; show clean preview instead.
+                if (IsVirtualOrPdfPrinter(printerUsed))
                 {
-                    return;
+                    ShowKOTPreview(kotId);
+                    return true;
                 }
                 doc.PrintController = new StandardPrintController(); // Silent printing without "Printing Page 1..." popup
                 doc.Print();
+                return true;
             }
-            catch
+            catch (Exception ex)
             {
-                // Silently ignore if thermal printer is temporarily disconnected
+                errorMessage = ex.Message;
+                try { ShowKOTPreview(kotId); } catch { }
+                return false;
             }
+        }
+
+        public static void PrintKOT(int kotId)
+        {
+            PrintKOT(kotId, out _, out _);
         }
 
         public static void ShowKOTPreview(int kotId)
@@ -105,20 +116,32 @@ namespace MeroDokan
             }
         }
 
-        public static void PrintVoidKOT(int kotId, string reason)
+        public static bool PrintVoidKOT(int kotId, string reason, out string printerUsed, out string errorMessage)
         {
+            printerUsed = "";
+            errorMessage = "";
             try
             {
                 PrintDocument doc = BuildVoidKotDocument(kotId, reason);
-                string printer = doc.PrinterSettings.PrinterName;
-                if (IsVirtualOrPdfPrinter(printer))
+                printerUsed = doc.PrinterSettings.PrinterName;
+                if (IsVirtualOrPdfPrinter(printerUsed))
                 {
-                    return;
+                    return true;
                 }
                 doc.PrintController = new StandardPrintController();
                 doc.Print();
+                return true;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                errorMessage = ex.Message;
+                return false;
+            }
+        }
+
+        public static void PrintVoidKOT(int kotId, string reason)
+        {
+            PrintVoidKOT(kotId, reason, out _, out _);
         }
 
         public static void ShowSettlementPreview(SettlementPrintData d)
@@ -233,11 +256,12 @@ namespace MeroDokan
         #endregion
 
         #region Printer Setup & Discovery
-        private static string FindThermalPrinter(string configuredName = null)
+        public static string FindThermalPrinter(string configuredName = null)
         {
             try
             {
-                if (!string.IsNullOrEmpty(configuredName))
+                // 1. Explicitly configured printer (if not placeholder/auto-detect)
+                if (!string.IsNullOrEmpty(configuredName) && !configuredName.StartsWith("(", StringComparison.Ordinal))
                 {
                     foreach (string p in PrinterSettings.InstalledPrinters)
                     {
@@ -246,13 +270,57 @@ namespace MeroDokan
                     }
                 }
 
-                // Auto-detect TVS RP 3220, POS-80, Thermal printer
+                // Exclude known non-thermal office inkjet / laser printers (e.g. Epson EcoTank/L-series, HP DeskJet/LaserJet)
+                bool IsNonThermalOfficePrinter(string name)
+                {
+                    string l = name.ToLowerInvariant();
+                    return l.Contains("ecotank") || l.Contains("inkjet") || l.Contains("deskjet") || 
+                           l.Contains("laserjet") || l.Contains("l3250") || l.Contains("l3150") || 
+                           l.Contains("l3110") || l.Contains("l3210") || l.Contains("l805") ||
+                           l.Contains("l-series") || l.Contains("ink tank") || l.Contains("smart tank");
+                }
+
+                // 2. Comprehensive auto-detection for thermal / POS / receipt / kitchen printers
+                string[] thermalKeywords = new string[]
+                {
+                    "posiflex", "pp8800", "pp8000", "pp-8", "pp7", "pp9", "pp6", "aura",
+                    "thermal", "pos-", "pos ", "receipt", "kot", "kitchen", "80mm", "58mm",
+                    "tvs", "rp 3220", "rp3220", "rp-3220", "rp3200", "rp",
+                    "tm-t", "tm-m", "tm-u", "tm-p", "tm-l", "tm-ba", "epson tm",
+                    "xprinter", "xp-", "rongta", "everycom", "retsol",
+                    "hoin", "bixolon", "citizen", "star", "snbc",
+                    "gprinter", "black copper", "dokan", "esc/pos", "esc-pos"
+                };
+
                 foreach (string p in PrinterSettings.InstalledPrinters)
                 {
+                    if (IsVirtualOrPdfPrinter(p)) continue;
+                    if (IsNonThermalOfficePrinter(p)) continue;
                     string lower = p.ToLowerInvariant();
-                    if (lower.Contains("3220") || lower.Contains("rp 3220") || lower.Contains("rp3220") ||
-                        lower.Contains("pos-80") || lower.Contains("pos80") || lower.Contains("receipt") ||
-                        lower.Contains("80mm") || lower.Contains("thermal") || lower.Contains("kitchen") || lower.Contains("tvs"))
+                    foreach (var kw in thermalKeywords)
+                    {
+                        if (lower.Contains(kw))
+                            return p;
+                    }
+                }
+
+                // 3. Check Windows Default Printer if it is a physical printer (and not an office inkjet)
+                try
+                {
+                    PrinterSettings defaultSettings = new PrinterSettings();
+                    if (!string.IsNullOrEmpty(defaultSettings.PrinterName) && 
+                        !IsVirtualOrPdfPrinter(defaultSettings.PrinterName) && 
+                        !IsNonThermalOfficePrinter(defaultSettings.PrinterName))
+                    {
+                        return defaultSettings.PrinterName;
+                    }
+                }
+                catch { }
+
+                // 4. Fallback: Any installed non-virtual physical printer (excluding office inkjets)
+                foreach (string p in PrinterSettings.InstalledPrinters)
+                {
+                    if (!IsVirtualOrPdfPrinter(p) && !IsNonThermalOfficePrinter(p))
                     {
                         return p;
                     }
@@ -260,6 +328,95 @@ namespace MeroDokan
             }
             catch { }
             return null; // Fallback to Windows default printer
+        }
+
+        public static string GetConnectedPrinterDisplayName(string configuredName = null)
+        {
+            string p = FindThermalPrinter(configuredName);
+            if (!string.IsNullOrEmpty(p) && !IsVirtualOrPdfPrinter(p))
+            {
+                return p;
+            }
+            return "Virtual / PDF (Preview)";
+        }
+
+        public static List<string> GetInstalledPrinterNames()
+        {
+            var list = new List<string>();
+            try
+            {
+                foreach (string p in PrinterSettings.InstalledPrinters)
+                {
+                    list.Add(p);
+                }
+            }
+            catch { }
+            return list;
+        }
+
+        public static bool PrintTestKOT(string targetPrinter, out string message)
+        {
+            try
+            {
+                KotData d = new KotData
+                {
+                    KotNumber = 999,
+                    TableNumber = "TEST-1",
+                    OrderType = "DINING",
+                    BillNumber = "TEST-BILL",
+                    Steward = "System Admin",
+                    DateStr = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                    KotComment = "Hardware Thermal Test Print - MeroDokan Cafe POS",
+                    Items = new List<CafeBillItem>
+                    {
+                        new CafeBillItem { Name = "Test Coffee (Hot)", Qty = 1, Rate = 120, Amt = 120 },
+                        new CafeBillItem { Name = "Test Sandwich [Extra Cheese]", Qty = 2, Rate = 150, Amt = 300 }
+                    }
+                };
+
+                PrintDocument doc = new PrintDocument();
+                doc.DocumentName = "TestKOT_999";
+                string p = FindThermalPrinter(targetPrinter);
+                if (!string.IsNullOrEmpty(p))
+                {
+                    doc.PrinterSettings.PrinterName = p;
+                }
+
+                int pageHeight = EstimateKotHeight(d);
+                PaperSize paperSize = new PaperSize(PaperName, PaperWidth, pageHeight);
+                paperSize.RawKind = (int)PaperKind.Custom;
+                doc.DefaultPageSettings.PaperSize = paperSize;
+                doc.DefaultPageSettings.Margins = new Margins(MarginLeft, MarginRight, 6, 6);
+                doc.PrinterSettings.DefaultPageSettings.PaperSize = paperSize;
+                doc.PrinterSettings.DefaultPageSettings.Margins = new Margins(MarginLeft, MarginRight, 6, 6);
+
+                doc.PrintPage += delegate(object s, PrintPageEventArgs e)
+                {
+                    DrawKotSlip(e.Graphics, d);
+                    e.HasMorePages = false;
+                };
+
+                if (IsVirtualOrPdfPrinter(doc.PrinterSettings.PrinterName))
+                {
+                    PrintPreviewDialog dlg = new PrintPreviewDialog();
+                    dlg.Document = doc;
+                    dlg.Size = new Size(360, 600);
+                    try { ((Form)dlg).Text = "Test KOT Preview (Virtual Printer)"; } catch { }
+                    dlg.ShowDialog();
+                    message = "Preview displayed (virtual / PDF printer selected).";
+                    return true;
+                }
+
+                doc.PrintController = new StandardPrintController();
+                doc.Print();
+                message = $"Test KOT successfully sent to printer: {doc.PrinterSettings.PrinterName}";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                message = $"Test print failed: {ex.Message}";
+                return false;
+            }
         }
         #endregion
 

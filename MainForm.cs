@@ -28,6 +28,7 @@ namespace MeroDokan
 
         private Label lblClockFooter;
         private Label lblInvoiceFooter;
+        private Label lblPrinterFooter;
         private System.Windows.Forms.Timer clockTimer;
 
         // Sidebar Navigation Buttons
@@ -531,12 +532,16 @@ namespace MeroDokan
             Theme.StyleLabel(lblClockFooter, Theme.TextMuted, new Font("Segoe UI", 8F));
             footerPanel.Controls.Add(lblClockFooter);
 
-            Label lblPrinterFooter = new Label();
-            lblPrinterFooter.Text = "🖨️ Printer : Thermal ESC/POS (Ready)";
+            lblPrinterFooter = new Label();
             lblPrinterFooter.Location = new Point(600, 7);
             lblPrinterFooter.AutoSize = true;
+            lblPrinterFooter.Cursor = Cursors.Hand;
             Theme.StyleLabel(lblPrinterFooter, Theme.TextMuted, new Font("Segoe UI", 8F));
+            lblPrinterFooter.Click += (s, e) => {
+                if (btnSettings != null) btnSettings.PerformClick();
+            };
             footerPanel.Controls.Add(lblPrinterFooter);
+            UpdatePrinterFooter();
 
             Label lblBranchFooter = new Label();
             lblBranchFooter.Text = "📍 Profile : Main Branch";
@@ -886,6 +891,30 @@ namespace MeroDokan
             }
 
             RefreshShopBrand();
+            UpdatePrinterFooter();
+        }
+
+        public void UpdatePrinterFooter()
+        {
+            if (lblPrinterFooter == null || lblPrinterFooter.IsDisposed) return;
+            try
+            {
+                string printerName = ThermalReceiptPrinter.GetConnectedPrinterDisplayName();
+                if (printerName.Contains("Virtual") || printerName.Contains("PDF"))
+                {
+                    lblPrinterFooter.Text = "🖨️ Printer : Virtual/PDF Preview";
+                    lblPrinterFooter.ForeColor = Color.FromArgb(251, 191, 36); // Amber
+                }
+                else
+                {
+                    lblPrinterFooter.Text = $"🖨️ Printer : {printerName} (Ready)";
+                    lblPrinterFooter.ForeColor = Color.FromArgb(52, 211, 153); // Emerald
+                }
+            }
+            catch
+            {
+                lblPrinterFooter.Text = "🖨️ Printer : Thermal ESC/POS (Ready)";
+            }
         }
 
         public void RefreshShopBrand()

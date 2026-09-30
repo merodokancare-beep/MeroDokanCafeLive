@@ -38,6 +38,11 @@ namespace MeroDokan
         private string loadedProfilePicPath = "";
         private string loadedLogoPath = "";
         
+        private ComboBox comboKitchenPrinter;
+        private ComboBox comboBillingPrinter;
+        private Button btnTestKot;
+        private Button btnTestBilling;
+        
         private Button btnUploadProfilePic;
         private Button btnUploadLogo;
         private Button btnSave;
@@ -68,7 +73,7 @@ namespace MeroDokan
 
         private void InitializeComponent()
         {
-            this.Size = new Size(950, 520);
+            this.Size = new Size(950, 600);
             this.AutoScroll = true;
             this.BackColor = Theme.Secondary;
 
@@ -83,7 +88,7 @@ namespace MeroDokan
             // Responsive Layout Table for split columns
             TableLayoutPanel splitLayout = new TableLayoutPanel();
             splitLayout.Location = new Point(20, 48);
-            splitLayout.Size = new Size(910, 430);
+            splitLayout.Size = new Size(910, 520);
             splitLayout.ColumnCount = 2;
             splitLayout.RowCount = 1;
             splitLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
@@ -95,7 +100,7 @@ namespace MeroDokan
             // ==========================================
             // LEFT COLUMN: Cafe Details
             // ==========================================
-            leftPanel = Theme.CreateCard(440, 420);
+            leftPanel = Theme.CreateCard(440, 510);
             leftPanel.Dock = DockStyle.Fill;
             leftPanel.Margin = new Padding(0, 0, 10, 0);
             splitLayout.Controls.Add(leftPanel, 0, 0);
@@ -242,10 +247,19 @@ namespace MeroDokan
             lblInfo.Font = Theme.SmallFont;
             leftPanel.Controls.Add(lblInfo);
 
+            // 8. Detected Printer Info
+            Label lblPrinterStatus = new Label();
+            lblPrinterStatus.Text = "🖨️ Detected Thermal Printer: " + ThermalReceiptPrinter.GetConnectedPrinterDisplayName();
+            lblPrinterStatus.Location = new Point(15, 372);
+            lblPrinterStatus.Size = new Size(410, 38);
+            lblPrinterStatus.ForeColor = Color.FromArgb(52, 211, 153);
+            lblPrinterStatus.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
+            leftPanel.Controls.Add(lblPrinterStatus);
+
             // ==========================================
             // RIGHT COLUMN: Theme & Image Branding
             // ==========================================
-            rightPanel = Theme.CreateCard(440, 420);
+            rightPanel = Theme.CreateCard(440, 510);
             rightPanel.Dock = DockStyle.Fill;
             rightPanel.Margin = new Padding(10, 0, 0, 0);
             splitLayout.Controls.Add(rightPanel, 1, 0);
@@ -432,10 +446,79 @@ namespace MeroDokan
             chkPrintQROnReceipt.Checked = true;
             rightPanel.Controls.Add(chkPrintQROnReceipt);
 
-            // 4. Compact Image Branding Strip (Avatar & Logo)
+            // 4. THERMAL PRINTER HARDWARE SETTINGS
+            Label lblPrinterSection = new Label();
+            lblPrinterSection.Text = "🖨️ Thermal POS & Kitchen KOT Printer Hardware";
+            lblPrinterSection.Location = new Point(15, 302);
+            lblPrinterSection.AutoSize = true;
+            Theme.StyleLabel(lblPrinterSection, Theme.Accent, Theme.BoldFont);
+            rightPanel.Controls.Add(lblPrinterSection);
+
+            // Kitchen / KOT Printer (Left) & Billing / Receipt Printer (Right)
+            Label lblKitchenPrinter = new Label();
+            lblKitchenPrinter.Text = "🍳 Kitchen / KOT Printer";
+            lblKitchenPrinter.Location = new Point(15, 322);
+            lblKitchenPrinter.AutoSize = true;
+            Theme.StyleLabel(lblKitchenPrinter, Theme.TextLight, Theme.SmallFont);
+            rightPanel.Controls.Add(lblKitchenPrinter);
+
+            comboKitchenPrinter = new ComboBox();
+            comboKitchenPrinter.Size = new Size(195, 26);
+            comboKitchenPrinter.Location = new Point(15, 340);
+            comboKitchenPrinter.DropDownStyle = ComboBoxStyle.DropDownList;
+            comboKitchenPrinter.BackColor = Theme.Primary;
+            comboKitchenPrinter.ForeColor = Theme.TextLight;
+            comboKitchenPrinter.Font = Theme.MainFont;
+            comboKitchenPrinter.Items.Add("(Auto-Detect Thermal Printer)");
+            foreach (var p in ThermalReceiptPrinter.GetInstalledPrinterNames())
+            {
+                comboKitchenPrinter.Items.Add(p);
+            }
+            comboKitchenPrinter.SelectedIndex = 0;
+            rightPanel.Controls.Add(comboKitchenPrinter);
+
+            Label lblBillingPrinter = new Label();
+            lblBillingPrinter.Text = "🧾 Billing / Receipt Printer";
+            lblBillingPrinter.Location = new Point(220, 322);
+            lblBillingPrinter.AutoSize = true;
+            Theme.StyleLabel(lblBillingPrinter, Theme.TextLight, Theme.SmallFont);
+            rightPanel.Controls.Add(lblBillingPrinter);
+
+            comboBillingPrinter = new ComboBox();
+            comboBillingPrinter.Size = new Size(205, 26);
+            comboBillingPrinter.Location = new Point(220, 340);
+            comboBillingPrinter.DropDownStyle = ComboBoxStyle.DropDownList;
+            comboBillingPrinter.BackColor = Theme.Primary;
+            comboBillingPrinter.ForeColor = Theme.TextLight;
+            comboBillingPrinter.Font = Theme.MainFont;
+            comboBillingPrinter.Items.Add("(Auto-Detect Thermal Printer)");
+            foreach (var p in ThermalReceiptPrinter.GetInstalledPrinterNames())
+            {
+                comboBillingPrinter.Items.Add(p);
+            }
+            comboBillingPrinter.SelectedIndex = 0;
+            rightPanel.Controls.Add(comboBillingPrinter);
+
+            btnTestKot = new Button();
+            btnTestKot.Text = "🍳 Test Print KOT";
+            btnTestKot.Size = new Size(195, 28);
+            btnTestKot.Location = new Point(15, 372);
+            Theme.StyleSecondaryButton(btnTestKot);
+            btnTestKot.Click += BtnTestKot_Click;
+            rightPanel.Controls.Add(btnTestKot);
+
+            btnTestBilling = new Button();
+            btnTestBilling.Text = "🧾 Test Print Receipt";
+            btnTestBilling.Size = new Size(205, 28);
+            btnTestBilling.Location = new Point(220, 372);
+            Theme.StyleSecondaryButton(btnTestBilling);
+            btnTestBilling.Click += BtnTestBilling_Click;
+            rightPanel.Controls.Add(btnTestBilling);
+
+            // 5. Compact Image Branding Strip (Avatar & Logo)
             picProfilePic = new PictureBox();
             picProfilePic.Size = new Size(32, 32);
-            picProfilePic.Location = new Point(15, 302);
+            picProfilePic.Location = new Point(15, 412);
             picProfilePic.BorderStyle = BorderStyle.FixedSingle;
             picProfilePic.SizeMode = PictureBoxSizeMode.Zoom;
             picProfilePic.BackColor = Color.FromArgb(17, 24, 39);
@@ -444,14 +527,14 @@ namespace MeroDokan
             btnUploadProfilePic = new Button();
             btnUploadProfilePic.Text = "📷 Avatar";
             btnUploadProfilePic.Size = new Size(100, 30);
-            btnUploadProfilePic.Location = new Point(54, 303);
+            btnUploadProfilePic.Location = new Point(54, 413);
             Theme.StyleSecondaryButton(btnUploadProfilePic);
             btnUploadProfilePic.Click += (s, e) => UploadImage(ref loadedProfilePicPath, picProfilePic);
             rightPanel.Controls.Add(btnUploadProfilePic);
 
             picLogo = new PictureBox();
             picLogo.Size = new Size(32, 32);
-            picLogo.Location = new Point(220, 302);
+            picLogo.Location = new Point(220, 412);
             picLogo.BorderStyle = BorderStyle.FixedSingle;
             picLogo.SizeMode = PictureBoxSizeMode.Zoom;
             picLogo.BackColor = Color.FromArgb(17, 24, 39);
@@ -460,19 +543,62 @@ namespace MeroDokan
             btnUploadLogo = new Button();
             btnUploadLogo.Text = "🖼️ Shop Logo";
             btnUploadLogo.Size = new Size(110, 30);
-            btnUploadLogo.Location = new Point(259, 303);
+            btnUploadLogo.Location = new Point(259, 413);
             Theme.StyleSecondaryButton(btnUploadLogo);
             btnUploadLogo.Click += (s, e) => UploadImage(ref loadedLogoPath, picLogo);
             rightPanel.Controls.Add(btnUploadLogo);
 
-            // 5. SAVE SETTINGS BUTTON (Prominent & Unclipped)
+            // 6. SAVE SETTINGS BUTTON (Prominent & Unclipped)
             btnSave = new Button();
             btnSave.Text = "💾 SAVE PROFILE CONFIGURATIONS";
             btnSave.Size = new Size(410, 42);
-            btnSave.Location = new Point(15, 346);
+            btnSave.Location = new Point(15, 456);
             Theme.StyleSuccessButton(btnSave);
             btnSave.Click += BtnSave_Click;
             rightPanel.Controls.Add(btnSave);
+        }
+
+        private void BtnTestKot_Click(object sender, EventArgs e)
+        {
+            string target = comboKitchenPrinter.SelectedItem?.ToString();
+            string msg;
+            bool ok = ThermalReceiptPrinter.PrintTestKOT(target, out msg);
+            MessageBox.Show(msg, "Kitchen KOT Test Print", MessageBoxButtons.OK, ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+        }
+
+        private void BtnTestBilling_Click(object sender, EventArgs e)
+        {
+            string target = comboBillingPrinter.SelectedItem?.ToString();
+            string resolved = ThermalReceiptPrinter.FindThermalPrinter(target);
+            if (string.IsNullOrEmpty(resolved) || ThermalReceiptPrinter.IsVirtualOrPdfPrinter(resolved))
+            {
+                MessageBox.Show($"Resolved Printer: {resolved ?? "None"} (Virtual / PDF)\nPhysical thermal printer not detected; receipt preview will open on checkout.", "Billing Printer Status", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                MessageBox.Show($"Connected Physical Thermal Printer:\n\n{resolved}\n\nStatus: Ready for 80mm ESC/POS receipt generation.", "Billing Printer Ready", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void SelectPrinterInCombo(ComboBox cmb, string printerName)
+        {
+            if (cmb == null || cmb.Items.Count == 0) return;
+            if (string.IsNullOrEmpty(printerName) || printerName.StartsWith("(", StringComparison.Ordinal))
+            {
+                cmb.SelectedIndex = 0;
+                return;
+            }
+
+            for (int i = 0; i < cmb.Items.Count; i++)
+            {
+                if (cmb.Items[i].ToString().Equals(printerName, StringComparison.OrdinalIgnoreCase))
+                {
+                    cmb.SelectedIndex = i;
+                    return;
+                }
+            }
+            cmb.Items.Add(printerName);
+            cmb.SelectedItem = printerName;
         }
 
         private void UploadImage(ref string imagePathField, PictureBox picBox)
@@ -567,6 +693,12 @@ namespace MeroDokan
                                 txtUPIName.Text = (rdr["UPIName"] != DBNull.Value) ? rdr["UPIName"].ToString() : "";
                                 chkAutoShowQR.Checked = (rdr["AutoShowQROnUPI"] != DBNull.Value) ? Convert.ToBoolean(rdr["AutoShowQROnUPI"]) : true;
                                 chkPrintQROnReceipt.Checked = (rdr["PrintQROnReceipt"] != DBNull.Value) ? Convert.ToBoolean(rdr["PrintQROnReceipt"]) : true;
+
+                                // Thermal & Kitchen Printer Hardware Settings
+                                string kPrinter = (rdr["KitchenPrinterName"] != DBNull.Value) ? rdr["KitchenPrinterName"].ToString() : "";
+                                string bPrinter = (rdr["BillingPrinterName"] != DBNull.Value) ? rdr["BillingPrinterName"].ToString() : "";
+                                SelectPrinterInCombo(comboKitchenPrinter, kPrinter);
+                                SelectPrinterInCombo(comboBillingPrinter, bPrinter);
 
                                 isHandlingThemeChange = true;
                                 string preset = rdr["ThemePreset"]?.ToString() ?? "Dark Slate";
@@ -749,6 +881,12 @@ namespace MeroDokan
                 if (!decimal.TryParse(txtDefaultPackingCharge?.Text?.Trim(), out defaultPacking))
                     defaultPacking = 40.00m;
 
+                string selKitchenPrinter = comboKitchenPrinter.SelectedItem?.ToString();
+                if (selKitchenPrinter != null && selKitchenPrinter.StartsWith("(", StringComparison.Ordinal)) selKitchenPrinter = null;
+
+                string selBillingPrinter = comboBillingPrinter.SelectedItem?.ToString();
+                if (selBillingPrinter != null && selBillingPrinter.StartsWith("(", StringComparison.Ordinal)) selBillingPrinter = null;
+
                 // Update settings in database
                 using (SqlConnection conn = new SqlConnection(DatabaseHelper.ConnectionString))
                 {
@@ -760,6 +898,7 @@ namespace MeroDokan
                             BackupFolderPath = @backupFolder, GoogleDriveAddress = @gDriveAddr,
                             StateName = @stName, StateCode = @stCode, IsTaxInclusive = @isTaxInc,
                             DefaultBillType = @defBill, DefaultGSTRate = @defGst, DefaultPackingCharge = @defPacking,
+                            KitchenPrinterName = @kPrinter, BillingPrinterName = @bPrinter,
                             UPIId = @upiId, UPIName = @upiName, AutoShowQROnUPI = @autoQR, PrintQROnReceipt = @printQR";
 
                     using (SqlCommand cmd = new SqlCommand(updateSql, conn))
@@ -782,6 +921,8 @@ namespace MeroDokan
                         cmd.Parameters.AddWithValue("@defBill", defaultBillType);
                         cmd.Parameters.AddWithValue("@defGst", defaultGSTRate);
                         cmd.Parameters.AddWithValue("@defPacking", defaultPacking);
+                        cmd.Parameters.AddWithValue("@kPrinter", string.IsNullOrEmpty(selKitchenPrinter) ? DBNull.Value : (object)selKitchenPrinter);
+                        cmd.Parameters.AddWithValue("@bPrinter", string.IsNullOrEmpty(selBillingPrinter) ? DBNull.Value : (object)selBillingPrinter);
                         cmd.Parameters.AddWithValue("@upiId", string.IsNullOrEmpty(upiId) ? DBNull.Value : (object)upiId);
                         cmd.Parameters.AddWithValue("@upiName", string.IsNullOrEmpty(upiName) ? DBNull.Value : (object)upiName);
                         cmd.Parameters.AddWithValue("@autoQR", autoShowQR);

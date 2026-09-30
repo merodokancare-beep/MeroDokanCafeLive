@@ -2850,17 +2850,75 @@ namespace MeroDokan
                 // Update Table in DB to Running status
                 UpdateTableSummaryInDb();
 
-                // Print KOT Slip to Kitchen Printer
-                ThermalReceiptPrinter.PrintKOT(newKotId);
+                // Print KOT Slip directly to Kitchen Thermal Printer
+                string printerUsed;
+                string printErr;
+                bool printSuccess = ThermalReceiptPrinter.PrintKOT(newKotId, out printerUsed, out printErr);
 
-                MessageBox.Show($"KOT #{nextKotNumber} printed and sent to kitchen successfully!", "KOT Generated", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                // Instant UI updates
                 RefreshOrderCartView();
                 MainForm.Instance?.RefreshLiveOrderCounts();
+
+                // Clear active KOT note
+                currentKotComment = "";
+                if (btnKotComment != null)
+                {
+                    btnKotComment.Text = "📝 Note";
+                    btnKotComment.ForeColor = Theme.TextMuted;
+                }
+
+                // Audio confirmation chime
+                try { System.Media.SystemSounds.Asterisk.Play(); } catch { }
+
+                // Immediate one-click visual feedback on button
+                ShowKotSentButtonFeedback(nextKotNumber, printerUsed, printSuccess, printErr);
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error sending KOT: {ex.Message}", "KOT Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private System.Windows.Forms.Timer kotFeedbackTimer;
+        private void ShowKotSentButtonFeedback(int kotNumber, string printerUsed, bool printSuccess, string printErr)
+        {
+            if (btnPrintKot == null || btnPrintKot.IsDisposed) return;
+
+            if (kotFeedbackTimer == null)
+            {
+                kotFeedbackTimer = new System.Windows.Forms.Timer();
+                kotFeedbackTimer.Interval = 2500;
+                kotFeedbackTimer.Tick += (s, e) =>
+                {
+                    kotFeedbackTimer.Stop();
+                    if (btnPrintKot != null && !btnPrintKot.IsDisposed)
+                    {
+                        btnPrintKot.Text = "🍳 Send to Kitchen";
+                        btnPrintKot.BackColor = Color.FromArgb(109, 40, 217);
+                        btnPrintKot.Enabled = true;
+                    }
+                };
+            }
+
+            kotFeedbackTimer.Stop();
+
+            if (printSuccess)
+            {
+                string shortPrinter = string.IsNullOrEmpty(printerUsed) ? "" : $" ({printerUsed})";
+                btnPrintKot.Text = $"✓ KOT #{kotNumber} Sent & Printed!";
+                btnPrintKot.BackColor = Color.FromArgb(16, 185, 129); // Vibrant emerald green
+            }
+            else
+            {
+                btnPrintKot.Text = $"⚠️ KOT #{kotNumber} (Check Printer)";
+                btnPrintKot.BackColor = Color.FromArgb(234, 88, 12); // Amber warning
+                if (!string.IsNullOrEmpty(printErr))
+                {
+                    MessageBox.Show($"KOT #{kotNumber} was created in the system, but printer error occurred:\n\n{printErr}\n\nPlease check printer cable, power and paper roll.", "Printer Notice", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+
+            kotFeedbackTimer.Start();
         }
 
         private void UpdateTableSummaryInDb()
