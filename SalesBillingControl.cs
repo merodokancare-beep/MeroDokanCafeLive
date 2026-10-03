@@ -156,9 +156,17 @@ namespace MeroDokan
         private Button btnShareTableTop;
         private Button btnShiftTable;
         private Button btnCancelOrder;
+        private Panel rowTopPanel;
+        private Panel rowBottomPanel;
+        private FlowLayoutPanel rowTopLeftFlow;
+        private FlowLayoutPanel rowTopRightFlow;
+        private FlowLayoutPanel rowBottomLeftFlow;
+        private FlowLayoutPanel rowBottomRightFlow;
         private Button btnModeDining;
         private Button btnModeTakeaway;
         private Button btnModeDelivery;
+        private Button btnReprintLastTop;
+        private Button btnRecentBillsTop;
 
         // Catalog Controls
         private TextBox txtSearchItem;
@@ -482,13 +490,12 @@ namespace MeroDokan
                     {
                         Text = btnLabel,
                         AutoSize = true,
-                        Height = 36,
-                        MinimumSize = new Size(80, 36),
+                        Height = 34,
                         Padding = new Padding(8, 0, 8, 0),
                         Font = new Font("Segoe UI", 9F, FontStyle.Bold),
                         FlatStyle = FlatStyle.Flat,
                         Cursor = Cursors.Hand,
-                        Margin = new Padding(0, 2, 6, 0),
+                        Margin = new Padding(0, 2, 4, 0),
                         BackColor = isCurrent ? Color.FromArgb(109, 40, 217) : Color.FromArgb(30, 41, 59),
                         ForeColor = isCurrent ? Color.White : Color.FromArgb(203, 213, 225)
                     };
@@ -514,6 +521,7 @@ namespace MeroDokan
             }
 
             subBillsFlow.ResumeLayout();
+            AdjustTopBarResponsiveLayout();
         }
 
         private class SubTableTabInfo
@@ -534,17 +542,38 @@ namespace MeroDokan
             topBarPanel = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 56,
+                Height = 48,
                 BackColor = Color.FromArgb(15, 23, 42),
-                Padding = new Padding(8, 8, 8, 8)
+                Padding = new Padding(6, 4, 6, 4)
             };
             topBarPanel.Paint += (s, e) => {
                 using (Pen p = new Pen(Theme.CardBorder, 1))
                     e.Graphics.DrawLine(p, 0, topBarPanel.Height - 1, topBarPanel.Width, topBarPanel.Height - 1);
             };
 
-            // Left Section (Back Button + Sub-Bills Flow + Share Table + Shift Table)
-            FlowLayoutPanel topLeftFlow = new FlowLayoutPanel
+            rowTopPanel = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 38,
+                BackColor = Color.Transparent
+            };
+            rowTopPanel.Paint += (s, e) => {
+                if (rowBottomPanel != null && rowBottomPanel.Visible)
+                {
+                    using (Pen p = new Pen(Color.FromArgb(30, 41, 59), 1))
+                        e.Graphics.DrawLine(p, 6, rowTopPanel.Height - 1, rowTopPanel.Width - 6, rowTopPanel.Height - 1);
+                }
+            };
+
+            rowBottomPanel = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 38,
+                BackColor = Color.Transparent,
+                Visible = false
+            };
+
+            rowTopLeftFlow = new FlowLayoutPanel
             {
                 Dock = DockStyle.Left,
                 AutoSize = true,
@@ -555,24 +584,64 @@ namespace MeroDokan
                 Margin = new Padding(0)
             };
 
+            rowTopRightFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Right,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                FlowDirection = FlowDirection.RightToLeft,
+                WrapContents = false,
+                BackColor = Color.Transparent,
+                Margin = new Padding(0)
+            };
+
+            rowBottomLeftFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Left,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent,
+                Margin = new Padding(0)
+            };
+
+            rowBottomRightFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Right,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                FlowDirection = FlowDirection.RightToLeft,
+                WrapContents = false,
+                BackColor = Color.Transparent,
+                Margin = new Padding(0)
+            };
+
+            rowTopPanel.Controls.Add(rowTopRightFlow);
+            rowTopPanel.Controls.Add(rowTopLeftFlow);
+
+            rowBottomPanel.Controls.Add(rowBottomRightFlow);
+            rowBottomPanel.Controls.Add(rowBottomLeftFlow);
+
+            topBarPanel.Controls.Add(rowBottomPanel);
+            topBarPanel.Controls.Add(rowTopPanel);
+
             btnBackToFloor = new Button
             {
                 Text = "⬅ Tables",
                 AutoSize = true,
-                Height = 36,
-                MinimumSize = new Size(80, 36),
+                Height = 34,
                 Padding = new Padding(8, 0, 8, 0),
                 BackColor = Color.FromArgb(30, 41, 59),
                 ForeColor = Theme.TextWhite,
                 Font = Theme.BoldFont,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
-                Margin = new Padding(0, 2, 6, 0)
+                Margin = new Padding(0, 2, 4, 0)
             };
             btnBackToFloor.FlatAppearance.BorderSize = 1;
             btnBackToFloor.FlatAppearance.BorderColor = Color.FromArgb(51, 65, 85);
             btnBackToFloor.Click += (s, e) => OnNavigateToFloor?.Invoke();
-            topLeftFlow.Controls.Add(btnBackToFloor);
 
             subBillsFlow = new FlowLayoutPanel
             {
@@ -584,7 +653,6 @@ namespace MeroDokan
                 Padding = new Padding(0),
                 Margin = new Padding(0)
             };
-            topLeftFlow.Controls.Add(subBillsFlow);
 
             btnActiveMode = new Button
             {
@@ -592,11 +660,10 @@ namespace MeroDokan
                 Font = Theme.BoldFont,
                 ForeColor = Color.White,
                 BackColor = Theme.Accent,
-                Height = 36,
-                MinimumSize = new Size(80, 36),
-                Padding = new Padding(10, 0, 10, 0),
+                Height = 34,
+                Padding = new Padding(8, 0, 8, 0),
                 AutoSize = true,
-                Margin = new Padding(0, 2, 6, 0),
+                Margin = new Padding(0, 2, 4, 0),
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand
             };
@@ -606,17 +673,16 @@ namespace MeroDokan
 
             btnShareTableTop = new Button
             {
-                Text = "🪑 Share",
+                Text = "🪑 Share Table",
                 AutoSize = true,
-                Height = 36,
-                MinimumSize = new Size(80, 36),
+                Height = 34,
                 Padding = new Padding(8, 0, 8, 0),
                 BackColor = Color.FromArgb(109, 40, 217), // Violet
                 ForeColor = Color.White,
                 Font = Theme.BoldFont,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
-                Margin = new Padding(0, 2, 6, 0)
+                Margin = new Padding(0, 2, 4, 0)
             };
             btnShareTableTop.FlatAppearance.BorderSize = 0;
             btnShareTableTop.Click += (s, e) => {
@@ -628,43 +694,25 @@ namespace MeroDokan
                     }
                 }
             };
-            topLeftFlow.Controls.Add(btnShareTableTop);
 
             btnShiftTable = new Button
             {
-                Text = "🔁 Shift",
+                Text = "🔁 Shift Table",
                 AutoSize = true,
-                Height = 36,
-                MinimumSize = new Size(80, 36),
+                Height = 34,
                 Padding = new Padding(8, 0, 8, 0),
                 BackColor = Color.FromArgb(30, 41, 59),
                 ForeColor = Theme.TextLight,
                 Font = Theme.BoldFont,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
-                Margin = new Padding(0, 2, 6, 0)
+                Margin = new Padding(0, 2, 4, 0)
             };
             btnShiftTable.FlatAppearance.BorderSize = 1;
             btnShiftTable.FlatAppearance.BorderColor = Color.FromArgb(51, 65, 85);
             btnShiftTable.Click += BtnShiftTable_Click;
-            topLeftFlow.Controls.Add(btnShiftTable);
 
-            topBarPanel.Controls.Add(topLeftFlow);
-
-            // Right Section (Steward, Mode Switchers)
-            FlowLayoutPanel topRightFlow = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Right,
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                FlowDirection = FlowDirection.RightToLeft,
-                WrapContents = false,
-                BackColor = Color.Transparent,
-                Padding = new Padding(0, 2, 0, 0),
-                Margin = new Padding(0)
-            };
-
-            // Steward Selector (Styled button matching adjacent 36px controls exactly)
+            // Steward Selector (Styled button matching adjacent controls exactly)
             cmbSteward = new ComboBox();
             cmbSteward.Visible = false;
             cmbSteward.SelectedIndexChanged += (s, e) => UpdateStewardButtonText();
@@ -683,37 +731,64 @@ namespace MeroDokan
             {
                 Text = "👤 Steward ▾",
                 AutoSize = true,
-                Height = 36,
+                Height = 34,
                 Padding = new Padding(8, 0, 8, 0),
                 Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(30, 41, 59),
                 ForeColor = Color.White,
                 Cursor = Cursors.Hand,
-                Margin = new Padding(3, 0, 0, 0)
+                Margin = new Padding(3, 2, 0, 0)
             };
             btnSteward.FlatAppearance.BorderSize = 1;
             btnSteward.FlatAppearance.BorderColor = Color.FromArgb(51, 65, 85);
             btnSteward.Click += (s, e) => ShowStewardMenu(btnSteward);
-            topRightFlow.Controls.Add(btnSteward);
+
+            btnReprintLastTop = new Button
+            {
+                Text = "🖨️ Last Bill",
+                AutoSize = true,
+                Height = 34,
+                Padding = new Padding(8, 0, 8, 0),
+                Font = Theme.BoldFont,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(16, 185, 129), // Emerald
+                ForeColor = Color.White,
+                Cursor = Cursors.Hand,
+                Margin = new Padding(3, 2, 0, 0)
+            };
+            btnReprintLastTop.FlatAppearance.BorderSize = 0;
+            btnReprintLastTop.Click += (s, e) => ThermalReceiptPrinter.ReprintLastSettledBill(this);
+
+            btnRecentBillsTop = new Button
+            {
+                Text = "📜 Recent Bills",
+                AutoSize = true,
+                Height = 34,
+                Padding = new Padding(8, 0, 8, 0),
+                Font = Theme.BoldFont,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(30, 41, 59),
+                ForeColor = Color.White,
+                Cursor = Cursors.Hand,
+                Margin = new Padding(3, 2, 0, 0)
+            };
+            btnRecentBillsTop.FlatAppearance.BorderSize = 1;
+            btnRecentBillsTop.FlatAppearance.BorderColor = Color.FromArgb(51, 65, 85);
+            btnRecentBillsTop.Click += (s, e) => {
+                using (var dlg = new RecentSettledBillsDialog())
+                {
+                    dlg.ShowDialog(this);
+                }
+            };
 
             // Mode Switch Buttons
             btnModeDelivery = CreateTopSwitchButton("DELIVERY", "🛵 Delivery");
             btnModeTakeaway = CreateTopSwitchButton("TAKEAWAY", "🛍️ Takeaway");
             btnModeDining = CreateTopSwitchButton("DINING", "🍽️ Dining");
 
-            topRightFlow.Controls.Add(btnModeDelivery);
-            topRightFlow.Controls.Add(btnModeTakeaway);
-            topRightFlow.Controls.Add(btnModeDining);
-
-            topBarPanel.Controls.Add(topRightFlow);
-
             topBarPanel.SizeChanged += (s, e) => {
-                if (topLeftFlow != null && topRightFlow != null)
-                {
-                    int maxLeft = Math.Max(200, topBarPanel.ClientSize.Width - topRightFlow.Width - 10);
-                    topLeftFlow.MaximumSize = new Size(maxLeft, topBarPanel.ClientSize.Height);
-                }
+                AdjustTopBarResponsiveLayout();
             };
 
             // ================= 2. RIGHT ORDER & KOT CART PANEL =================
@@ -749,6 +824,120 @@ namespace MeroDokan
             topBarPanel.SendToBack();
             rightOrderPanel.SendToBack();
             leftCatalogPanel.BringToFront();
+
+            AdjustTopBarResponsiveLayout();
+        }
+
+        private void AdjustTopBarResponsiveLayout()
+        {
+            if (topBarPanel == null || rowTopLeftFlow == null || rowTopRightFlow == null || 
+                rowBottomLeftFlow == null || rowBottomRightFlow == null) return;
+
+            int w = topBarPanel.ClientSize.Width;
+            bool isDining = (ActiveOrderType == "DINING");
+            int threshold = isDining ? 920 : 740;
+            bool isWide = (w >= threshold);
+
+            topBarPanel.SuspendLayout();
+            rowTopPanel.SuspendLayout();
+            rowBottomPanel.SuspendLayout();
+            rowTopLeftFlow.SuspendLayout();
+            rowTopRightFlow.SuspendLayout();
+            rowBottomLeftFlow.SuspendLayout();
+            rowBottomRightFlow.SuspendLayout();
+
+            if (isWide)
+            {
+                // 1-Row layout (All controls in rowTopPanel)
+                topBarPanel.Height = 48;
+                rowTopPanel.Height = 40;
+                rowBottomPanel.Visible = false;
+
+                rowTopLeftFlow.Controls.Clear();
+                rowTopRightFlow.Controls.Clear();
+                rowBottomLeftFlow.Controls.Clear();
+                rowBottomRightFlow.Controls.Clear();
+
+                rowTopLeftFlow.Controls.Add(btnBackToFloor);
+                rowTopLeftFlow.Controls.Add(subBillsFlow);
+                rowTopLeftFlow.Controls.Add(btnShareTableTop);
+                rowTopLeftFlow.Controls.Add(btnShiftTable);
+
+                // Right to left: Steward at far right, then Last, Bills, Delivery, Takeaway, Dining
+                rowTopRightFlow.Controls.Add(btnSteward);
+                rowTopRightFlow.Controls.Add(btnReprintLastTop);
+                rowTopRightFlow.Controls.Add(btnRecentBillsTop);
+                rowTopRightFlow.Controls.Add(btnModeDelivery);
+                rowTopRightFlow.Controls.Add(btnModeTakeaway);
+                rowTopRightFlow.Controls.Add(btnModeDining);
+
+                if (w < 1120)
+                {
+                    btnShareTableTop.Text = "🪑 Share";
+                    btnShiftTable.Text = "🔁 Shift";
+                    btnModeDining.Text = "🍽️ Dine";
+                    btnModeTakeaway.Text = "🛍️ Take";
+                    btnModeDelivery.Text = "🛵 Deliv";
+                    btnReprintLastTop.Text = "🖨️ Last";
+                    btnRecentBillsTop.Text = "📜 Bills";
+                }
+                else
+                {
+                    btnShareTableTop.Text = "🪑 Share Table";
+                    btnShiftTable.Text = "🔁 Shift Table";
+                    btnModeDining.Text = "🍽️ Dining";
+                    btnModeTakeaway.Text = "🛍️ Takeaway";
+                    btnModeDelivery.Text = "🛵 Delivery";
+                    btnReprintLastTop.Text = "🖨️ Last Bill";
+                    btnRecentBillsTop.Text = "📜 Recent Bills";
+                }
+            }
+            else
+            {
+                // 2-Row layout (Row 1: Nav & Modes, Row 2: Table tools & Billing actions)
+                topBarPanel.Height = 84;
+                rowTopPanel.Height = 38;
+                rowBottomPanel.Height = 38;
+                rowBottomPanel.Visible = true;
+
+                rowTopLeftFlow.Controls.Clear();
+                rowTopRightFlow.Controls.Clear();
+                rowBottomLeftFlow.Controls.Clear();
+                rowBottomRightFlow.Controls.Clear();
+
+                // Row 1: Nav & Order Mode switchers
+                rowTopLeftFlow.Controls.Add(btnBackToFloor);
+                rowTopLeftFlow.Controls.Add(subBillsFlow);
+
+                rowTopRightFlow.Controls.Add(btnModeDelivery);
+                rowTopRightFlow.Controls.Add(btnModeTakeaway);
+                rowTopRightFlow.Controls.Add(btnModeDining);
+
+                // Row 2: Actions & Billing
+                rowBottomLeftFlow.Controls.Add(btnShareTableTop);
+                rowBottomLeftFlow.Controls.Add(btnShiftTable);
+
+                rowBottomRightFlow.Controls.Add(btnSteward);
+                rowBottomRightFlow.Controls.Add(btnReprintLastTop);
+                rowBottomRightFlow.Controls.Add(btnRecentBillsTop);
+
+                // In 2-row layout, buttons have full breathing room
+                btnShareTableTop.Text = "🪑 Share Table";
+                btnShiftTable.Text = "🔁 Shift Table";
+                btnModeDining.Text = "🍽️ Dining";
+                btnModeTakeaway.Text = "🛍️ Takeaway";
+                btnModeDelivery.Text = "🛵 Delivery";
+                btnReprintLastTop.Text = "🖨️ Last Bill";
+                btnRecentBillsTop.Text = "📜 Recent Bills";
+            }
+
+            rowBottomRightFlow.ResumeLayout();
+            rowBottomLeftFlow.ResumeLayout();
+            rowTopRightFlow.ResumeLayout();
+            rowTopLeftFlow.ResumeLayout();
+            rowBottomPanel.ResumeLayout();
+            rowTopPanel.ResumeLayout();
+            topBarPanel.ResumeLayout();
         }
 
         private Button CreateTopSwitchButton(string mode, string text)
@@ -758,14 +947,14 @@ namespace MeroDokan
             {
                 Text = text,
                 AutoSize = true,
-                Height = 36,
-                Padding = new Padding(7, 0, 7, 0),
+                Height = 34,
+                Padding = new Padding(8, 0, 8, 0),
                 Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = isActive ? Theme.Accent : Color.FromArgb(30, 41, 59),
                 ForeColor = isActive ? Color.White : Theme.TextMuted,
                 Cursor = Cursors.Hand,
-                Margin = new Padding(3, 0, 0, 0),
+                Margin = new Padding(3, 2, 0, 0),
                 Tag = mode
             };
             btn.FlatAppearance.BorderSize = isActive ? 0 : 1;
@@ -773,6 +962,7 @@ namespace MeroDokan
             btn.Click += (s, e) => {
                 LoadTableOrder(ActiveTableNumber, mode);
                 UpdateTopSwitchButtons();
+                AdjustTopBarResponsiveLayout();
             };
             return btn;
         }
@@ -1276,8 +1466,14 @@ namespace MeroDokan
 
         private void ShowItemParcelMenu(Button anchor, CartItem item)
         {
-            ContextMenuStrip menu = new ContextMenuStrip();
-            menu.Renderer = new DarkMenuRenderer();
+            ContextMenuStrip menu = new ContextMenuStrip
+            {
+                BackColor = Color.FromArgb(15, 23, 42),
+                ForeColor = Color.White,
+                ShowImageMargin = false,
+                Font = new Font("Segoe UI", 9.5F, FontStyle.Regular),
+                Renderer = new DarkMenuRenderer()
+            };
 
             // Quick splits if quantity >= 2
             if (item.Quantity >= 2)
@@ -3199,17 +3395,35 @@ namespace MeroDokan
         public class DarkMenuRenderer : ToolStripProfessionalRenderer
         {
             public DarkMenuRenderer() : base(new DarkMenuColors()) { }
+
+            protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
+            {
+                e.TextColor = Color.White;
+                base.OnRenderItemText(e);
+            }
+
+            protected override void OnRenderSeparator(ToolStripSeparatorRenderEventArgs e)
+            {
+                using (Pen p = new Pen(Color.FromArgb(51, 65, 85), 1))
+                {
+                    int y = e.Item.Height / 2;
+                    e.Graphics.DrawLine(p, 8, y, e.Item.Width - 8, y);
+                }
+            }
+
             private class DarkMenuColors : ProfessionalColorTable
             {
-                public override Color MenuItemSelected => Color.FromArgb(45, 55, 75);
-                public override Color MenuItemSelectedGradientBegin => Color.FromArgb(45, 55, 75);
-                public override Color MenuItemSelectedGradientEnd => Color.FromArgb(45, 55, 75);
+                public override Color MenuItemSelected => Color.FromArgb(37, 99, 235);
+                public override Color MenuItemSelectedGradientBegin => Color.FromArgb(37, 99, 235);
+                public override Color MenuItemSelectedGradientEnd => Color.FromArgb(37, 99, 235);
                 public override Color MenuItemBorder => Color.Transparent;
                 public override Color MenuBorder => Color.FromArgb(51, 65, 85);
-                public override Color ToolStripDropDownBackground => Color.FromArgb(20, 27, 42);
-                public override Color ImageMarginGradientBegin => Color.FromArgb(20, 27, 42);
-                public override Color ImageMarginGradientMiddle => Color.FromArgb(20, 27, 42);
-                public override Color ImageMarginGradientEnd => Color.FromArgb(20, 27, 42);
+                public override Color ToolStripDropDownBackground => Color.FromArgb(15, 23, 42);
+                public override Color ImageMarginGradientBegin => Color.FromArgb(15, 23, 42);
+                public override Color ImageMarginGradientMiddle => Color.FromArgb(15, 23, 42);
+                public override Color ImageMarginGradientEnd => Color.FromArgb(15, 23, 42);
+                public override Color SeparatorDark => Color.FromArgb(51, 65, 85);
+                public override Color SeparatorLight => Color.Transparent;
             }
         }
     }

@@ -24,8 +24,16 @@ namespace MeroDokan
 
         private Label lblDaySale;
         private Label lblUnsettled;
+        private Panel pnlDaySale;
+        private Panel pnlUnsettled;
+        private Panel rowTopPanel;
+        private Panel rowBottomPanel;
+        private FlowLayoutPanel rowTopRightFlow;
+        private FlowLayoutPanel rowBottomActionsFlow;
         private Button btnTableShift;
         private Button btnShareTable;
+        private Button btnReprintLast;
+        private Button btnRecentBills;
         private Button btnRefresh;
 
         private string currentFilterMode = "DINING";
@@ -77,6 +85,11 @@ namespace MeroDokan
             refreshTimer.Interval = 4000;
             refreshTimer.Tick += (s, e) => LoadTableCards();
             refreshTimer.Start();
+
+            this.SizeChanged += (s, e) => {
+                AdjustHeaderResponsiveLayout();
+                AdjustCardSizes();
+            };
 
             this.VisibleChanged += (s, e) => { if (this.Visible) FocusDefaultControl(); };
         }
@@ -137,25 +150,22 @@ namespace MeroDokan
             topHeaderPanel = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 56,
+                Height = 88,
                 BackColor = Theme.CardBg,
-                Padding = new Padding(8, 6, 8, 6)
+                Padding = new Padding(10, 6, 10, 6)
             };
 
-            TableLayoutPanel topHeaderTable = new TableLayoutPanel
+            // Row 1 (Top): Mode Tabs (Left) + Live Stat Badges (Right)
+            rowTopPanel = new Panel
             {
-                Dock = DockStyle.Fill,
-                ColumnCount = 2,
-                RowCount = 1,
+                Dock = DockStyle.Top,
+                Height = 38,
                 BackColor = Color.Transparent
             };
-            topHeaderTable.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-            topHeaderTable.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
 
-            // Mode Tabs (DINING, TAKE AWAY, DELIVERY, WAITING)
             modeTabsPanel = new FlowLayoutPanel
             {
-                Dock = DockStyle.Fill,
+                Dock = DockStyle.Left,
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 FlowDirection = FlowDirection.LeftToRight,
@@ -172,23 +182,47 @@ namespace MeroDokan
             modeTabsPanel.Controls.Add(btnModeTakeaway);
             modeTabsPanel.Controls.Add(btnModeDelivery);
             modeTabsPanel.Controls.Add(btnModeWaiting);
-            topHeaderTable.Controls.Add(modeTabsPanel, 0, 0);
+            rowTopPanel.Controls.Add(modeTabsPanel);
 
-            // Live Stats & Action Buttons (Right side FlowLayoutPanel)
-            FlowLayoutPanel rightStatsFlow = new FlowLayoutPanel
+            rowTopRightFlow = new FlowLayoutPanel
             {
-                Dock = DockStyle.Fill,
+                Dock = DockStyle.Right,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 FlowDirection = FlowDirection.RightToLeft,
                 WrapContents = false,
                 BackColor = Color.Transparent,
-                Padding = new Padding(0, 3, 0, 0)
+                Padding = new Padding(0)
+            };
+            rowTopPanel.Controls.Add(rowTopRightFlow);
+
+            // Row 2 (Bottom): Action Buttons (Right-aligned or Flow)
+            rowBottomPanel = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 40,
+                BackColor = Color.Transparent,
+                Padding = new Padding(0, 4, 0, 0)
             };
 
+            rowBottomActionsFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Right,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                FlowDirection = FlowDirection.RightToLeft,
+                WrapContents = false,
+                BackColor = Color.Transparent,
+                Padding = new Padding(0)
+            };
+            rowBottomPanel.Controls.Add(rowBottomActionsFlow);
+
+            // Initialize Action Buttons
             btnRefresh = new Button
             {
                 Text = "🔄 Refresh",
                 AutoSize = true,
-                Height = 36,
+                Height = 34,
                 Padding = new Padding(10, 0, 10, 0),
                 BackColor = Theme.CardBorder,
                 ForeColor = Theme.TextLight,
@@ -199,64 +233,89 @@ namespace MeroDokan
             };
             btnRefresh.FlatAppearance.BorderSize = 0;
             btnRefresh.Click += (s, e) => LoadTableCards();
-            rightStatsFlow.Controls.Add(btnRefresh);
+
+            btnReprintLast = new Button
+            {
+                Text = "🖨️ Last Bill",
+                AutoSize = true,
+                Height = 34,
+                Padding = new Padding(10, 0, 10, 0),
+                BackColor = Color.FromArgb(16, 185, 129), // Emerald
+                ForeColor = Color.White,
+                Font = Theme.BoldFont,
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand,
+                Margin = new Padding(6, 0, 0, 0)
+            };
+            btnReprintLast.FlatAppearance.BorderSize = 0;
+            btnReprintLast.Click += (s, e) => ThermalReceiptPrinter.ReprintLastSettledBill(this);
+
+            btnRecentBills = new Button
+            {
+                Text = "📜 Recent Bills",
+                AutoSize = true,
+                Height = 34,
+                Padding = new Padding(10, 0, 10, 0),
+                BackColor = Color.FromArgb(30, 41, 59),
+                ForeColor = Color.White,
+                Font = Theme.BoldFont,
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand,
+                Margin = new Padding(6, 0, 0, 0)
+            };
+            btnRecentBills.FlatAppearance.BorderSize = 1;
+            btnRecentBills.FlatAppearance.BorderColor = Color.FromArgb(51, 65, 85);
+            btnRecentBills.Click += (s, e) => {
+                using (var dlg = new RecentSettledBillsDialog())
+                {
+                    dlg.ShowDialog(this);
+                }
+            };
 
             btnTableShift = new Button
             {
                 Text = "🔁 Shift Table",
                 AutoSize = true,
-                Height = 36,
+                Height = 34,
                 Padding = new Padding(10, 0, 10, 0),
                 BackColor = Theme.Accent,
                 ForeColor = Color.White,
                 Font = Theme.BoldFont,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
-                Margin = new Padding(8, 0, 0, 0)
+                Margin = new Padding(6, 0, 0, 0)
             };
             btnTableShift.FlatAppearance.BorderSize = 0;
             btnTableShift.Click += BtnTableShift_Click;
-            rightStatsFlow.Controls.Add(btnTableShift);
 
             btnShareTable = new Button
             {
                 Text = "🪑 Share Table",
                 AutoSize = true,
-                Height = 36,
+                Height = 34,
                 Padding = new Padding(10, 0, 10, 0),
                 BackColor = Color.FromArgb(109, 40, 217), // Violet
                 ForeColor = Color.White,
                 Font = Theme.BoldFont,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
-                Margin = new Padding(8, 0, 0, 0)
+                Margin = new Padding(6, 0, 0, 0)
             };
             btnShareTable.FlatAppearance.BorderSize = 0;
             btnShareTable.Click += (s, e) => BtnShareTable_Click(null);
-            rightStatsFlow.Controls.Add(btnShareTable);
 
-            lblUnsettled = new Label
-            {
-                Text = "Unsettled: ₹0.00",
-                ForeColor = Color.FromArgb(244, 114, 182), // Soft Pink
-                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-                AutoSize = true,
-                Margin = new Padding(12, 8, 4, 0)
-            };
-            rightStatsFlow.Controls.Add(lblUnsettled);
+            // Initialize Stats Badges
+            lblUnsettled = new Label { Text = "₹0.0" };
+            pnlUnsettled = CreateStatBadge("Unsettled", lblUnsettled, Color.FromArgb(244, 114, 182), "🟣");
 
-            lblDaySale = new Label
-            {
-                Text = "Day Sale: ₹0.00",
-                ForeColor = Theme.Success,
-                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-                AutoSize = true,
-                Margin = new Padding(12, 8, 4, 0)
-            };
-            rightStatsFlow.Controls.Add(lblDaySale);
+            lblDaySale = new Label { Text = "₹0.0" };
+            pnlDaySale = CreateStatBadge("Day Sale", lblDaySale, Theme.Success, "🟢");
 
-            topHeaderTable.Controls.Add(rightStatsFlow, 1, 0);
-            topHeaderPanel.Controls.Add(topHeaderTable);
+            // Add rows in docking order
+            topHeaderPanel.Controls.Add(rowBottomPanel);
+            topHeaderPanel.Controls.Add(rowTopPanel);
+
+            AdjustHeaderResponsiveLayout();
 
             // ================= 2. BOTTOM LEGEND PANEL =================
             bottomLegendPanel = new Panel
@@ -296,6 +355,145 @@ namespace MeroDokan
             topHeaderPanel.SendToBack();
             bottomLegendPanel.SendToBack();
             tableGridPanel.BringToFront();
+        }
+
+        private Panel CreateStatBadge(string title, Label valLabel, Color accentColor, string icon)
+        {
+            Panel p = new Panel
+            {
+                Height = 34,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                BackColor = Color.FromArgb(15, 23, 42),
+                Margin = new Padding(4, 1, 4, 1),
+                Padding = new Padding(8, 4, 8, 4),
+                Cursor = Cursors.Default
+            };
+            p.Paint += (s, e) => {
+                using (Pen pen = new Pen(Color.FromArgb(90, accentColor), 1.5f))
+                using (GraphicsPath path = Theme.GetRoundedPath(new Rectangle(0, 0, p.Width - 1, p.Height - 1), 6))
+                {
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    e.Graphics.DrawPath(pen, path);
+                }
+            };
+
+            FlowLayoutPanel flow = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0),
+                Padding = new Padding(0)
+            };
+
+            Label lblIcon = new Label
+            {
+                Text = icon,
+                AutoSize = true,
+                Font = new Font("Segoe UI", 9F, FontStyle.Regular),
+                ForeColor = accentColor,
+                Margin = new Padding(0, 3, 2, 0)
+            };
+            flow.Controls.Add(lblIcon);
+
+            Label lblTitle = new Label
+            {
+                Text = title + ": ",
+                AutoSize = true,
+                Font = new Font("Segoe UI Semibold", 8.5F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(148, 163, 184),
+                Margin = new Padding(0, 3, 0, 0)
+            };
+            flow.Controls.Add(lblTitle);
+
+            valLabel.AutoSize = true;
+            valLabel.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+            valLabel.ForeColor = accentColor;
+            valLabel.Margin = new Padding(0, 2, 0, 0);
+            flow.Controls.Add(valLabel);
+
+            p.Controls.Add(flow);
+            return p;
+        }
+
+        private void AdjustHeaderResponsiveLayout()
+        {
+            if (topHeaderPanel == null || rowTopRightFlow == null || rowBottomActionsFlow == null) return;
+            int w = this.ClientSize.Width;
+            bool isWide = (w >= 1350);
+
+            topHeaderPanel.SuspendLayout();
+            rowTopRightFlow.SuspendLayout();
+            rowBottomActionsFlow.SuspendLayout();
+
+            if (isWide)
+            {
+                // 1-Row layout (Mode Tabs on Left, Actions + Badges on Right)
+                topHeaderPanel.Height = 52;
+                rowBottomPanel.Visible = false;
+
+                rowTopRightFlow.Controls.Clear();
+                rowBottomActionsFlow.Controls.Clear();
+
+                rowTopRightFlow.Controls.Add(btnRefresh);
+                rowTopRightFlow.Controls.Add(btnReprintLast);
+                rowTopRightFlow.Controls.Add(btnRecentBills);
+                rowTopRightFlow.Controls.Add(btnTableShift);
+                rowTopRightFlow.Controls.Add(btnShareTable);
+                rowTopRightFlow.Controls.Add(pnlUnsettled);
+                rowTopRightFlow.Controls.Add(pnlDaySale);
+
+                btnShareTable.Text = "🪑 Share Table";
+                btnTableShift.Text = "🔁 Shift Table";
+                btnRecentBills.Text = "📜 Recent Bills";
+                btnReprintLast.Text = "🖨️ Last Bill";
+                btnRefresh.Text = "🔄 Refresh";
+            }
+            else
+            {
+                // 2-Row layout (Row 1: Mode Tabs + Badges; Row 2: Action Buttons)
+                topHeaderPanel.Height = 88;
+                rowBottomPanel.Visible = true;
+
+                rowTopRightFlow.Controls.Clear();
+                rowBottomActionsFlow.Controls.Clear();
+
+                // Row 1 (Right): Stats Badges
+                rowTopRightFlow.Controls.Add(pnlUnsettled);
+                rowTopRightFlow.Controls.Add(pnlDaySale);
+
+                // Row 2 (Bottom): Action Buttons
+                rowBottomActionsFlow.Controls.Add(btnRefresh);
+                rowBottomActionsFlow.Controls.Add(btnReprintLast);
+                rowBottomActionsFlow.Controls.Add(btnRecentBills);
+                rowBottomActionsFlow.Controls.Add(btnTableShift);
+                rowBottomActionsFlow.Controls.Add(btnShareTable);
+
+                if (w < 850)
+                {
+                    btnShareTable.Text = "🪑 Share";
+                    btnTableShift.Text = "🔁 Shift";
+                    btnRecentBills.Text = "📜 Bills";
+                    btnReprintLast.Text = "🖨️ Last";
+                    btnRefresh.Text = "🔄";
+                }
+                else
+                {
+                    btnShareTable.Text = "🪑 Share Table";
+                    btnTableShift.Text = "🔁 Shift Table";
+                    btnRecentBills.Text = "📜 Recent Bills";
+                    btnReprintLast.Text = "🖨️ Last Bill";
+                    btnRefresh.Text = "🔄 Refresh";
+                }
+            }
+
+            rowTopRightFlow.ResumeLayout(true);
+            rowBottomActionsFlow.ResumeLayout(true);
+            topHeaderPanel.ResumeLayout(true);
         }
 
         private void AdjustCardSizes()
@@ -448,8 +646,8 @@ namespace MeroDokan
                     }
                 }
 
-                if (lblDaySale != null) lblDaySale.Text = $"Day Sale: ₹{daySales:N1}";
-                if (lblUnsettled != null) lblUnsettled.Text = $"Unsettled: ₹{unsettledSales:N1}";
+                if (lblDaySale != null) lblDaySale.Text = $"₹{daySales:N1}";
+                if (lblUnsettled != null) lblUnsettled.Text = $"₹{unsettledSales:N1}";
 
                 // Load Tables
                 int availW = tableGridPanel.ClientSize.Width - tableGridPanel.Padding.Horizontal - 25;
@@ -1161,6 +1359,11 @@ namespace MeroDokan
                 itemShare.Click += (s, e) => BtnShareTable_Click(tableNum);
                 menu.Items.Add(itemShare);
             }
+
+            menu.Items.Add(new ToolStripSeparator());
+            var itemReprintTable = new ToolStripMenuItem($"🖨️ Reprint Last Bill ({tableNum})");
+            itemReprintTable.Click += (s, e) => ThermalReceiptPrinter.ReprintLastSettledBillForTable(tableNum, this);
+            menu.Items.Add(itemReprintTable);
 
             menu.Show(sourceControl, pt);
         }

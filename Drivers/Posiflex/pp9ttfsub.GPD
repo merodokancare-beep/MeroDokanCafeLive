@@ -1,0 +1,124 @@
+*%-----------------------------haiko add
+*TTFSEnabled?: TRUE
+
+*TTFS:BatangChe
+{
+*TTFontName:"BatangChe"
+*DevFontName:"BatangChe"
+}
+
+*TTFS:Consolas
+{
+*TTFontName:"Consolas"
+*DevFontName:"Consolas"
+}
+
+*TTFS:CourierNew
+{
+*TTFontName:"Courier New"
+*DevFontName:"Courier New"
+}
+
+*TTFS:DFKaiSB
+{
+*TTFontName:"DFKai-SB"
+*DevFontName:"DFKai-SB"
+}
+
+*TTFS:DejaVuSansMono
+{
+*TTFontName:"DejaVu Sans Mono"
+*DevFontName:"DejaVu Sans Mono"
+}
+
+*TTFS:DotumChe
+{
+*TTFontName:"DotumChe"
+*DevFontName:"DotumChe"
+}
+
+*TTFS:FangSong
+{
+*TTFontName:"FangSong"
+*DevFontName:"FangSong"
+}
+
+*TTFS:GulimChe
+{
+*TTFontName:"GulimChe"
+*DevFontName:"GulimChe"
+}
+
+*TTFS:GungsuhChe
+{
+*TTFontName:"GungsuhChe"
+*DevFontName:"GungsuhChe"
+}
+
+*TTFS:KaiTi
+{
+*TTFontName:"KaiTi"
+*DevFontName:"KaiTi"
+}
+
+*TTFS:LucidaConsole
+{
+*TTFontName:"Lucida Console"
+*DevFontName:"Lucida Console"
+}
+
+*TTFS:MSGothic
+{
+*TTFontName:"MS Gothic"
+*DevFontName:"MS Gothic"
+}
+
+*TTFS:MSMincho
+{
+*TTFontName:"MS Mincho"
+*DevFontName:"MS Mincho"
+}
+
+*TTFS:MingLiU
+{
+*TTFontName:"MingLiU"
+*DevFontName:"MingLiU"
+}
+
+*TTFS:MiriamFixed
+{
+*TTFontName:"Miriam Fixed"
+*DevFontName:"Miriam Fixed"
+}
+
+*TTFS:NSimSun
+{
+*TTFontName:"NSimSun"
+*DevFontName:"NSimSun"
+}
+
+*TTFS:Rod
+{
+*TTFontName:"Rod"
+*DevFontName:"Rod"
+}
+
+*TTFS:SimHei
+{
+*TTFontName:"SimHei"
+*DevFontName:"SimHei"
+}
+
+*TTFS:SimSunExtB
+{
+*TTFontName:"SimSun-ExtB"
+*DevFontName:"SimSun-ExtB"
+}
+
+*TTFS:SimplifiedArabicFixed
+{
+*TTFontName:"Simplified Arabic Fixed"
+*DevFontName:"Simplified Arabic Fixed"
+}
+
+*%-----------------------------

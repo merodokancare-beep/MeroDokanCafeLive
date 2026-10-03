@@ -692,7 +692,14 @@ namespace MeroDokan
             comboSalesDateFilter.SelectedIndex = 3; // Default "This Month"
 
             // Context Menu & Cell Double-Click to View Details or Copy Invoice Number
-            ContextMenuStrip cmsSales = new ContextMenuStrip();
+            ContextMenuStrip cmsSales = new ContextMenuStrip
+            {
+                BackColor = Color.FromArgb(15, 23, 42),
+                ForeColor = Color.White,
+                ShowImageMargin = false,
+                Font = new Font("Segoe UI", 9.5F, FontStyle.Regular),
+                Renderer = new SalesBillingControl.DarkMenuRenderer()
+            };
             ToolStripMenuItem menuCopyInvoice = new ToolStripMenuItem("📋 Copy Selected Invoice Number");
             menuCopyInvoice.Click += (s, e) =>
             {

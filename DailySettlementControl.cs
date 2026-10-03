@@ -123,28 +123,36 @@ namespace MeroDokan
             topBar.Controls.Add(btnRefresh);
 
             Button btnPrintA4Top = new Button();
-            btnPrintA4Top.Text = "📄 A4 Full Report (Multi-Page)";
-            btnPrintA4Top.Size = new Size(220, 32);
-            btnPrintA4Top.Location = new Point(370, 4);
+            btnPrintA4Top.Text = "📄 A4 Report";
+            btnPrintA4Top.Size = new Size(150, 32);
+            btnPrintA4Top.Location = new Point(360, 4);
             Theme.StyleSuccessButton(btnPrintA4Top);
             btnPrintA4Top.Click += (s, e) => PrintCurrentSettlement(isA4: true, previewOnly: false);
             topBar.Controls.Add(btnPrintA4Top);
 
             Button btnPrintThermalTop = new Button();
             btnPrintThermalTop.Text = "🧾 80mm Slip";
-            btnPrintThermalTop.Size = new Size(130, 32);
-            btnPrintThermalTop.Location = new Point(600, 4);
+            btnPrintThermalTop.Size = new Size(120, 32);
+            btnPrintThermalTop.Location = new Point(515, 4);
             Theme.StylePrimaryButton(btnPrintThermalTop);
             btnPrintThermalTop.Click += (s, e) => PrintCurrentSettlement(isA4: false, previewOnly: false);
             topBar.Controls.Add(btnPrintThermalTop);
 
             Button btnPreviewTop = new Button();
             btnPreviewTop.Text = "👁️ A4 Preview";
-            btnPreviewTop.Size = new Size(140, 32);
-            btnPreviewTop.Location = new Point(740, 4);
+            btnPreviewTop.Size = new Size(125, 32);
+            btnPreviewTop.Location = new Point(640, 4);
             Theme.StyleSecondaryButton(btnPreviewTop);
             btnPreviewTop.Click += (s, e) => PrintCurrentSettlement(isA4: true, previewOnly: true);
             topBar.Controls.Add(btnPreviewTop);
+
+            Button btnPreviewThermalTop = new Button();
+            btnPreviewThermalTop.Text = "👁️ 80mm Preview";
+            btnPreviewThermalTop.Size = new Size(135, 32);
+            btnPreviewThermalTop.Location = new Point(770, 4);
+            Theme.StyleSecondaryButton(btnPreviewThermalTop);
+            btnPreviewThermalTop.Click += (s, e) => PrintCurrentSettlement(isA4: false, previewOnly: true);
+            topBar.Controls.Add(btnPreviewThermalTop);
 
             this.Controls.Add(topBar);
 

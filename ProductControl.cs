@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
@@ -339,7 +340,10 @@ namespace MeroDokan
             public ProductDialog()
             {
                 InitializeComponent("Add Product");
-                this.Load += (s, e) => txtCode.Focus();
+                this.Load += (s, e) => {
+                    GenerateAndAssignProductCode();
+                    txtName.Focus();
+                };
             }
 
             public ProductDialog(int id, string code, string hsn, string name, string category, decimal gstRate, decimal cost, decimal sales, int stock, int minLevel, string desc)
@@ -439,10 +443,20 @@ namespace MeroDokan
                 this.Controls.Add(lblCode);
 
                 txtCode = new TextBox();
-                txtCode.Size = new Size(200, 30);
+                txtCode.Size = new Size(165, 30);
                 txtCode.Location = new Point(20, startY + gapY + 18);
                 Theme.StyleTextBox(txtCode);
                 this.Controls.Add(txtCode);
+
+                Button btnRegenCode = new Button();
+                btnRegenCode.Text = "⚡";
+                btnRegenCode.Size = new Size(32, 30);
+                btnRegenCode.Location = new Point(190, startY + gapY + 18);
+                Theme.StyleSecondaryButton(btnRegenCode);
+                ToolTip ttCode = new ToolTip();
+                ttCode.SetToolTip(btnRegenCode, "Auto-generate next SKU code");
+                btnRegenCode.Click += (s, e) => GenerateAndAssignProductCode();
+                this.Controls.Add(btnRegenCode);
 
                 Label lblHSN = new Label();
                 lblHSN.Text = "HSN Code *";
@@ -626,6 +640,11 @@ namespace MeroDokan
                         else if (mapping.Gst == 28m) comboGSTRate.SelectedIndex = 4;
                         else comboGSTRate.SelectedIndex = 3; // 18%
                     }
+
+                    if (productId == null && !string.IsNullOrEmpty(selCat))
+                    {
+                        GenerateAndAssignProductCode();
+                    }
                 };
 
                 LoadCategories();
@@ -676,6 +695,166 @@ namespace MeroDokan
                     codeToCategoryMapping["0901"] = "Coffee & Hot Brews";
                 }
                 comboCategory.SelectedIndex = 0;
+
+                if (productId == null)
+                {
+                    GenerateAndAssignProductCode();
+                }
+            }
+
+            private void GenerateAndAssignProductCode()
+            {
+                if (productId != null || txtCode == null || comboCategory == null) return;
+                string category = comboCategory.SelectedItem?.ToString();
+                if (string.IsNullOrEmpty(category)) return;
+
+                string nextCode = GenerateNextProductCodeForCategory(category);
+                if (!string.IsNullOrEmpty(nextCode))
+                {
+                    txtCode.Text = nextCode;
+                }
+            }
+
+            private static readonly Dictionary<string, string> StandardCategoryPrefixes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "AddOn", "ADD" },
+                { "Add-on", "ADD" },
+                { "Addons", "ADD" },
+                { "Add On", "ADD" },
+                { "Black Hot", "DRK" },
+                { "Milk Hot", "DRK" },
+                { "Hot Drinks", "DRK" },
+                { "Drinks", "DRK" },
+                { "Cold Drinks", "DRK" },
+                { "Tea", "TEA" },
+                { "Breakfast", "BRK" },
+                { "Burger", "BGR" },
+                { "Burgers", "BGR" },
+                { "Coffee", "COF" },
+                { "Cold Coffee", "COF" },
+                { "Korean", "KOR" },
+                { "Pasta & Noodles", "PAS" },
+                { "Pasta", "PAS" },
+                { "Noodles", "PAS" },
+                { "Pizza", "PIZ" },
+                { "Pizzas", "PIZ" },
+                { "Refreshers", "REF" },
+                { "Refresher", "REF" },
+                { "Salads", "SLD" },
+                { "Salad", "SLD" },
+                { "Sandwich", "SND" },
+                { "Sandwiches", "SND" },
+                { "Shakes", "SHK" },
+                { "Shake", "SHK" },
+                { "Small Bites", "SML" },
+                { "Snacks", "SML" },
+                { "Soups", "SOP" },
+                { "Soup", "SOP" },
+                { "Wraps", "WRP" },
+                { "Wrap", "WRP" },
+                { "Laphing", "LPH" },
+                { "Desserts", "DST" },
+                { "Dessert", "DST" },
+                { "Bakery", "BAK" },
+                { "Beverages", "BEV" }
+            };
+
+            public static string GenerateNextProductCodeForCategory(string category)
+            {
+                if (string.IsNullOrEmpty(category)) return "PRD-001";
+                string prefix = GetCategoryPrefix(category);
+
+                try
+                {
+                    using (SqlConnection conn = new SqlConnection(DatabaseHelper.ConnectionString))
+                    {
+                        conn.Open();
+                        string query = "SELECT Code FROM Products WHERE Code LIKE @pat";
+                        using (SqlCommand cmd = new SqlCommand(query, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@pat", prefix + "-%");
+                            using (SqlDataReader rdr = cmd.ExecuteReader())
+                            {
+                                int maxNumber = 0;
+                                while (rdr.Read())
+                                {
+                                    string code = rdr["Code"]?.ToString() ?? "";
+                                    int dashIdx = code.LastIndexOf('-');
+                                    if (dashIdx >= 0 && dashIdx + 1 < code.Length)
+                                    {
+                                        string numPart = code.Substring(dashIdx + 1).Trim();
+                                        if (int.TryParse(numPart, out int num))
+                                        {
+                                            if (num > maxNumber) maxNumber = num;
+                                        }
+                                    }
+                                }
+
+                                int nextNum = maxNumber + 1;
+                                return $"{prefix}-{nextNum:D3}";
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    return $"{prefix}-001";
+                }
+            }
+
+            private static string GetCategoryPrefix(string category)
+            {
+                if (string.IsNullOrWhiteSpace(category)) return "PRD";
+                category = category.Trim();
+
+                // 1. Check known standard categories first (instant, guaranteed consistency)
+                if (StandardCategoryPrefixes.TryGetValue(category, out string pfx))
+                {
+                    return pfx;
+                }
+
+                // 2. Look up existing products in database for this category to see what prefix was used
+                try
+                {
+                    using (SqlConnection conn = new SqlConnection(DatabaseHelper.ConnectionString))
+                    {
+                        conn.Open();
+                        string sql = "SELECT TOP 1 Code FROM Products WHERE Category = @cat AND CHARINDEX('-', Code) > 0 ORDER BY Id DESC";
+                        using (SqlCommand cmd = new SqlCommand(sql, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@cat", category);
+                            object result = cmd.ExecuteScalar();
+                            if (result != null && result != DBNull.Value)
+                            {
+                                string existingCode = result.ToString();
+                                int dash = existingCode.LastIndexOf('-');
+                                if (dash > 0)
+                                {
+                                    return existingCode.Substring(0, dash).Trim().ToUpper();
+                                }
+                            }
+                        }
+                    }
+                }
+                catch { }
+
+                // 3. Fallback for new / custom categories: 3 alphanumeric uppercase characters
+                string cleaned = "";
+                foreach (char c in category)
+                {
+                    if (char.IsLetterOrDigit(c)) cleaned += char.ToUpper(c);
+                }
+
+                if (cleaned.Length >= 3)
+                {
+                    return cleaned.Substring(0, 3);
+                }
+                else if (cleaned.Length > 0)
+                {
+                    return cleaned.PadRight(3, 'X');
+                }
+
+                return "PRD";
             }
 
             private void BtnSave_Click(object sender, EventArgs e)

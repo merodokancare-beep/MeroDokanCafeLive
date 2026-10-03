@@ -50,20 +50,131 @@ namespace MeroDokan
         {
             try
             {
-                PrintDocument doc = BuildCustomerBillDocument(saleId);
-                string printer = doc.PrinterSettings.PrinterName;
-                if (IsVirtualOrPdfPrinter(printer))
+                CafeBillData d = LoadCustomerBillData(saleId);
+                string printer = FindThermalPrinter(d.BillingPrinter);
+                if (string.IsNullOrEmpty(printer) || IsVirtualOrPdfPrinter(printer))
                 {
-                    // Open clean 80mm preview instead of popup asking to save PDF file to system drive
+                    // Open clean 80mm preview instead of popup asking to save PDF file to system drive or failing on office printer
                     ShowPreview(saleId);
                     return;
                 }
+                PrintDocument doc = BuildCustomerBillDocument(saleId);
+                doc.PrinterSettings.PrinterName = printer;
                 doc.PrintController = new StandardPrintController(); // Silent printing without "Printing Page 1..." popup
                 doc.Print();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error printing receipt: {ex.Message}\nPlease check your printer connection.", "Printer Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        public static bool ReprintLastSettledBill(IWin32Window parent = null)
+        {
+            try
+            {
+                int saleId = 0;
+                string invNum = "";
+                decimal total = 0;
+                string tbl = "";
+                string payMethod = "";
+                DateTime saleDate = DateTime.Now;
+
+                using (SqlConnection conn = new SqlConnection(DatabaseHelper.ConnectionString))
+                {
+                    conn.Open();
+                    string sql = "SELECT TOP 1 Id, InvoiceNumber, GrandTotal, TableNumber, PaymentMethod, SaleDate FROM Sales ORDER BY Id DESC";
+                    using (SqlCommand cmd = new SqlCommand(sql, conn))
+                    using (SqlDataReader r = cmd.ExecuteReader())
+                    {
+                        if (r.Read())
+                        {
+                            saleId = Convert.ToInt32(r["Id"]);
+                            invNum = r["InvoiceNumber"]?.ToString() ?? "";
+                            total = Convert.ToDecimal(r["GrandTotal"]);
+                            tbl = r["TableNumber"]?.ToString() ?? "Counter";
+                            payMethod = r["PaymentMethod"]?.ToString() ?? "Cash";
+                            if (r["SaleDate"] != DBNull.Value) saleDate = Convert.ToDateTime(r["SaleDate"]);
+                        }
+                    }
+                }
+
+                if (saleId <= 0)
+                {
+                    MessageBox.Show(parent, "No settled bills found to reprint.", "Reprint Bill", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return false;
+                }
+
+                string msg = $"Reprint last settled bill?\n\n• Invoice: {invNum}\n• Table / Order: {tbl}\n• Amount: ₹{total:N0} ({payMethod})\n• Time: {saleDate:hh:mm tt}";
+                DialogResult dr = MessageBox.Show(parent, msg, "Confirm Last Bill Reprint", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (dr == DialogResult.Yes)
+                {
+                    Print(saleId);
+                    MessageBox.Show(parent, $"Receipt for {invNum} sent to thermal printer.", "Reprint Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(parent, $"Error fetching last bill: {ex.Message}", "Reprint Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+        }
+
+        public static bool ReprintLastSettledBillForTable(string tableNum, IWin32Window parent = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(tableNum)) return false;
+
+                int saleId = 0;
+                string invNum = "";
+                decimal total = 0;
+                string payMethod = "";
+                DateTime saleDate = DateTime.Now;
+
+                using (SqlConnection conn = new SqlConnection(DatabaseHelper.ConnectionString))
+                {
+                    conn.Open();
+                    string sql = "SELECT TOP 1 Id, InvoiceNumber, GrandTotal, PaymentMethod, SaleDate FROM Sales WHERE TableNumber = @tNum ORDER BY Id DESC";
+                    using (SqlCommand cmd = new SqlCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@tNum", tableNum);
+                        using (SqlDataReader r = cmd.ExecuteReader())
+                        {
+                            if (r.Read())
+                            {
+                                saleId = Convert.ToInt32(r["Id"]);
+                                invNum = r["InvoiceNumber"]?.ToString() ?? "";
+                                total = Convert.ToDecimal(r["GrandTotal"]);
+                                payMethod = r["PaymentMethod"]?.ToString() ?? "Cash";
+                                if (r["SaleDate"] != DBNull.Value) saleDate = Convert.ToDateTime(r["SaleDate"]);
+                            }
+                        }
+                    }
+                }
+
+                if (saleId <= 0)
+                {
+                    MessageBox.Show(parent, $"No past settled bills found for Table '{tableNum}'.", "Reprint Bill", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return false;
+                }
+
+                string msg = $"Reprint last settled bill for Table {tableNum}?\n\n• Invoice: {invNum}\n• Amount: ₹{total:N0} ({payMethod})\n• Time: {saleDate:hh:mm tt}";
+                DialogResult dr = MessageBox.Show(parent, msg, "Confirm Table Bill Reprint", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (dr == DialogResult.Yes)
+                {
+                    Print(saleId);
+                    MessageBox.Show(parent, $"Receipt for {invNum} sent to thermal printer.", "Reprint Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(parent, $"Error fetching table bill: {ex.Message}", "Reprint Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
             }
         }
 
@@ -171,13 +282,14 @@ namespace MeroDokan
         {
             try
             {
-                PrintDocument doc = BuildSettlementDocument(d);
-                string printer = doc.PrinterSettings.PrinterName;
-                if (IsVirtualOrPdfPrinter(printer))
+                string printer = FindThermalPrinter(d.BillingPrinter);
+                if (string.IsNullOrEmpty(printer) || IsVirtualOrPdfPrinter(printer))
                 {
                     ShowSettlementPreview(d);
                     return;
                 }
+                PrintDocument doc = BuildSettlementDocument(d);
+                doc.PrinterSettings.PrinterName = printer;
                 doc.PrintController = new StandardPrintController();
                 doc.Print();
             }

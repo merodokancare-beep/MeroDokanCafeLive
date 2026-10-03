@@ -1,0 +1,214 @@
+;
+;	Printer Installation File
+;
+;	 List of supported printers, manufacturers
+;
+
+[Version]
+Signature="$Windows NT$"
+Provider=%PF%
+LayoutFile=ntprint.inf
+ClassGUID={4D36E979-E325-11CE-BFC1-08002BE10318}
+Class=Printer
+DriverVer=10/19/2023,1.0.6.m
+CatalogFile.NTAMD64=pp7x64.cat
+
+;
+; Manufacturer section.
+;
+; This section lists all of the manufacturers
+; that we will display in the Dialog box
+;
+
+[Manufacturer]
+"Posiflex Inc." = Posiflex, NTamd64
+
+;
+; Model Specifications Section
+;
+
+[Posiflex.NTamd64]
+;"Posiflex PP7000 Partial Cut v3" = pp7epc,LPTENUM\POSIFLEXPP700099A6,PP-7000
+;"Posiflex PP7000 No Cut v3" = pp7enc,LPTENUM\POSIFLEXPP700099A6,PP-7000
+"Posiflex PP9500 Printer" = pp7epc,LPTENUM\POSIFLEXPP90008DA5
+"Posiflex PP9500 Printer 576" = pp7eqc,LPTENUM\POSIFLEXPP90008DA5
+"Posiflex PP9000 Printer" = pp7epc,LPTENUM\POSIFLEXPP90008DA5
+"Posiflex PP9000 Printer 576" = pp7eqc,LPTENUM\POSIFLEXPP90008DA5
+"Posiflex PP8900 Printer" = pp7epc,LPTENUM\POSIFLEXPP88004F24
+"Posiflex PP8900 Printer 576" = pp7eqc,LPTENUM\POSIFLEXPP88004F24
+"Posiflex PP8806 Printer" = pp7epc,LPTENUM\POSIFLEXPP88004F24
+"Posiflex PP8806 Printer 576" = pp7eqc,LPTENUM\POSIFLEXPP88004F24
+"Posiflex PP8803 Printer" = pp7epc,LPTENUM\POSIFLEXPP88004F24
+"Posiflex PP8803 Printer 576" = pp7eqc,LPTENUM\POSIFLEXPP88004F24
+"Posiflex PP8802 Printer" = pp7epc,LPTENUM\POSIFLEXPP88004F24
+"Posiflex PP8802 Printer 576" = pp7eqc,LPTENUM\POSIFLEXPP88004F24
+"Posiflex PP8800E Printer" = pp7epc,LPTENUM\POSIFLEXPP88004F24
+"Posiflex PP8800E Printer 576" = pp7eqc,LPTENUM\POSIFLEXPP88004F24
+"Posiflex PP8800 Printer" = pp7epc,LPTENUM\POSIFLEXPP88004F24
+"Posiflex PP8800 Printer 576" = pp7eqc,LPTENUM\POSIFLEXPP88004F24
+"Posiflex PP8000 Printer" = pp7epc,LPTENUM\POSIFLEXPP80008DA5
+"Posiflex PP8000 Printer 576" = pp7eqc,LPTENUM\POSIFLEXPP80008DA5
+"Posiflex PP7100 Printer" = pp71epc,LPTENUM\POSIFLEXPP88004F24
+"Posiflex PP7100 Printer 576" = pp71eqc,LPTENUM\POSIFLEXPP88004F24
+"Posiflex PP7900 Printer" = pp7epc,LPTENUM\POSIFLEXPP76008DA5
+"Posiflex PP7900 Printer 576" = pp7eqc,LPTENUM\POSIFLEXPP76008DA5
+"Posiflex PP7600 Printer" = pp71epc,LPTENUM\POSIFLEXPP76008DA5
+"Posiflex PP7600 Printer 576" = pp71eqc,LPTENUM\POSIFLEXPP76008DA5
+"Posiflex PP7600X Printer" = pp7epc,LPTENUM\POSIFLEXPP76008DA5
+"Posiflex PP7600X Printer 576" = pp7eqc,LPTENUM\POSIFLEXPP76008DA5
+"Posiflex PP6800 Printer" = pp7epc,LPTENUM\POSIFLEXPP6800A726
+"Posiflex PP6800 Printer 576" = pp7eqc,LPTENUM\POSIFLEXPP6800A726
+"Posiflex PP6900 Printer" = pp7epc,LPTENUM\POSIFLEXPP6800A726
+"Posiflex PP6900 Printer 576" = pp7eqc,LPTENUM\POSIFLEXPP6800A726
+"Posiflex HS3inch Printer" = pp7epc,LPTENUM\POSIFLEXPP69006777
+"Posiflex HS3inch Printer 576" = pp7eqc,LPTENUM\POSIFLEXPP69006777
+"Posiflex HS-3inch Printer" = pp7epc,LPTENUM\POSIFLEXPP6800A726
+"Posiflex XP-3inch Printer" = pp7epc,LPTENUM\POSIFLEXPP6800A726
+"Posiflex DS-3inch Printer" = pp71epc,LPTENUM\POSIFLEXPP6800A726
+"Posiflex 58mm Printer" = pp52epc,LPTENUM\POSIFLEXPP520099A6
+;"Posiflex PP5000 Printer" = pp52epc,LPTENUM\POSIFLEXPP500021A7
+
+;
+; Installer section(s) referenced above.
+;
+
+[pp7eqc]
+CopyFiles=@PP7kres.Dll,@pp7eqc.GPD,@pp7kuxi.ini,@pp9ttfsub.gpd,OEM_BIDIMON
+CopyFiles=pp7kuni
+CopyFiles=pp7kui
+CopyFiles=pp9ttfsub.GPD
+DataSection=OEM_BIDI_DATA
+DataFile=pp7eqc.GPD
+Include=NTPRINT.INF
+Needs=UNIDRV_BIDI.OEM
+
+;CopyFiles=OEM_BIDIMON
+;Needs=UNIDRV.OEM
+;DataSection=UNIDRV_DATA
+
+[pp7epc]
+CopyFiles=@PP7kres.Dll,@pp7epc.GPD,@pp7kuxi.ini,@pp9ttfsub.gpd,OEM_BIDIMON
+CopyFiles=pp7kuni
+CopyFiles=pp7kui
+CopyFiles=pp9ttfsub.GPD
+DataSection=OEM_BIDI_DATA
+DataFile=pp7epc.GPD
+Include=NTPRINT.INF
+Needs=UNIDRV_BIDI.OEM
+
+;Needs=UNIDRV.OEM
+;DataSection=UNIDRV_DATA
+
+[pp7enc]
+CopyFiles=@PP7kres.Dll,@pp7enc.GPD,@pp7kuxi.ini,@pp9ttfsub.gpd,OEM_BIDIMON
+CopyFiles=pp7kuni
+CopyFiles=pp7kui
+CopyFiles=pp9ttfsub.GPD
+DataSection=OEM_BIDI_DATA
+DataFile=pp7enc.GPD
+Include=NTPRINT.INF
+Needs=UNIDRV_BIDI.OEM
+
+;Needs=UNIDRV.OEM
+;DataSection=UNIDRV_DATA
+
+[pp52epc]
+CopyFiles=@PP7kres.Dll,@pp52epc.GPD,@pp7kuxi.ini,@pp9ttfsub.gpd,OEM_BIDIMON
+CopyFiles=pp7kuni
+CopyFiles=pp7kui
+CopyFiles=pp9ttfsub.GPD
+DataSection=OEM_BIDI_DATA
+DataFile=pp52epc.GPD
+Include=NTPRINT.INF
+Needs=UNIDRV_BIDI.OEM
+
+[pp71epc]
+CopyFiles=@PP7kres.Dll,@pp71epc.GPD,@pp7kuxi.ini,@pp9ttfsub.gpd,OEM_BIDIMON
+CopyFiles=pp7kuni
+CopyFiles=pp7kui
+CopyFiles=pp9ttfsub.GPD
+DataSection=OEM_BIDI_DATA
+DataFile=pp71epc.GPD
+Include=NTPRINT.INF
+Needs=UNIDRV_BIDI.OEM
+
+[pp71eqc]
+CopyFiles=@PP7kres.Dll,@pp71eqc.GPD,@pp7kuxi.ini,@pp9ttfsub.gpd,OEM_BIDIMON
+CopyFiles=pp7kuni
+CopyFiles=pp7kui
+CopyFiles=pp9ttfsub.GPD
+DataSection=OEM_BIDI_DATA
+DataFile=pp71eqc.GPD
+Include=NTPRINT.INF
+Needs=UNIDRV_BIDI.OEM
+;Needs=UNIDRV.OEM
+;DataSection=UNIDRV_DATA
+
+; data section
+
+[OEM_BIDI_DATA]
+DriverFile=UNIDRV.DLL
+ConfigFile=UNIDRVUI.DLL
+HelpFile=UNIDRV.HLP
+LanguageMonitor=%OEM_MONITOR%
+
+; copy section
+
+[pp7kuni]
+pp7kuni.DLL
+
+[pp7kui]
+pp7kui.DLL
+
+[OEM_BIDIMON]
+pp7klm.DLL
+pfxapi.dll
+
+[DestinationDirs]
+DefaultDestDir=66000
+OEM_BIDIMON=66002
+
+[SourceDisksNames.NTamd64]
+1 = %disk1%,,,\i386
+2 = %disk1%,,,
+
+[SourceDisksNames]
+1 = %disk1%,,,\i386
+2 = %disk1%,,,
+
+[SourceDisksFiles.NTamd64]
+PP7kres.Dll = 2
+pp7kuxi.ini = 2
+pp7kuni.dll = 2
+pp7kui.dll = 2
+pp7epc.GPD = 2
+pp52epc.GPD = 2
+pp7enc.GPD = 2
+pp7eqc.gpd = 2
+pp71eqc.gpd = 2
+pp71epc.gpd = 2
+pp9ttfsub.gpd = 2
+pp7klm.dll = 2
+pfxapi.dll = 2
+
+[SourceDisksFiles]
+PP7kres.Dll = 2
+pp7kuxi.ini = 2
+pp7kuni.dll = 2
+pp7kui.dll = 2
+pp7epc.GPD = 2
+pp52epc.GPD = 2
+pp7enc.GPD = 2
+pp7eqc.gpd = 2
+pp71eqc.gpd = 2
+pp71epc.gpd = 2
+pp9ttfsub.gpd = 2
+pp7klm.dll = 2
+pfxapi.dll = 2
+
+[Strings]
+PrinterClassName="Printers"
+PF="Posiflex Inc."
+disk1="Posiflex Technology Inc. Printer Driver Setup Disk"
+OEM_MONITOR="Posiflex Language Monitor,pp7klm.DLL"
+

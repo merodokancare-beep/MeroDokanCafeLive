@@ -28,6 +28,7 @@
     <None Include="Setup_Database.bat" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Setup_Database.ps1" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Assets\**" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Drivers\**" CopyToOutputDirectory="PreserveNewest" />
     <Reference Include="System.Data" />
     <Reference Include="Microsoft.VisualBasic" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
